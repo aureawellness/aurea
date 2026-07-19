@@ -1,0 +1,1555 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Auréa · Benessere & Estetica</title>
+<style>
+:root{
+  --bg:#f4f7f5;
+  --card:#ffffff;
+  --ink:#12211b;
+  --muted:#6b7c74;
+  --line:#e7ede9;
+  --green:#1fae7e;
+  --green-d:#128a63;
+  --mint:#e5f7ef;
+  --coral:#ff6f8b;
+  --coral-s:#ffe6ec;
+  --violet:#7c5cff;
+  --violet-s:#ece7ff;
+  --amber:#f5a623;
+  --blue:#3b9dff;
+  --shadow:0 10px 30px rgba(18,33,27,.08);
+  --radius:20px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:linear-gradient(160deg,#dfeee7,#eef3f0 40%,#f6eff4);
+  color:var(--ink);
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  padding:24px 12px;
+}
+/* Phone frame */
+.phone{
+  width:100%;max-width:430px;height:900px;max-height:94vh;
+  background:var(--bg);
+  border-radius:40px;
+  box-shadow:0 30px 70px rgba(18,33,27,.28), 0 0 0 10px #10201a, 0 0 0 12px #24352d;
+  overflow:hidden;position:relative;display:flex;flex-direction:column;
+}
+.statusbar{
+  height:44px;flex:0 0 44px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 22px;font-size:13px;font-weight:600;color:var(--ink);
+  background:transparent;
+}
+.statusbar .dots{display:flex;gap:5px;align-items:center}
+.statusbar .dots span{width:6px;height:6px;border-radius:50%;background:var(--ink);opacity:.7}
+.viewport{flex:1;overflow-y:auto;overflow-x:hidden;position:relative;scroll-behavior:smooth}
+.viewport::-webkit-scrollbar{width:0}
+.screen{display:none;padding:6px 18px 120px;animation:fade .35s ease}
+.screen.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* Header */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:6px 0 14px}
+.hello .k{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.3px}
+.hello .n{font-size:22px;font-weight:800;margin-top:2px}
+.avatar{width:46px;height:46px;border-radius:16px;background:linear-gradient(135deg,var(--green),#4bd4a6);
+  display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:17px;box-shadow:var(--shadow)}
+.back{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);
+  border-radius:12px;padding:8px 12px;font-weight:700;font-size:13px;color:var(--ink);margin-bottom:14px;cursor:pointer}
+
+/* Cards */
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:16px}
+.card.tight{padding:14px}
+.h{font-size:17px;font-weight:800;margin:2px 0 12px;display:flex;align-items:center;gap:8px}
+.h .pill{margin-left:auto;font-size:11px;font-weight:700;color:var(--green-d);background:var(--mint);padding:4px 10px;border-radius:20px}
+.sub{font-size:12.5px;color:var(--muted);line-height:1.5}
+.section-title{font-size:15px;font-weight:800;margin:22px 4px 12px;display:flex;align-items:center;gap:8px}
+.section-title .more{margin-left:auto;font-size:12px;color:var(--green-d);font-weight:700;cursor:pointer}
+
+/* Ring */
+.ring-wrap{display:flex;align-items:center;gap:18px}
+.ring{position:relative;width:120px;height:120px;flex:0 0 120px}
+.ring svg{transform:rotate(-90deg)}
+.ring .c-val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring .c-val b{font-size:26px;font-weight:800;line-height:1}
+.ring .c-val small{font-size:11px;color:var(--muted);font-weight:600}
+.macros{flex:1;display:flex;flex-direction:column;gap:12px}
+.macro .lbl{display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:5px}
+.macro .lbl span:last-child{color:var(--muted)}
+.bar{height:8px;background:var(--line);border-radius:20px;overflow:hidden}
+.bar > i{display:block;height:100%;border-radius:20px}
+
+/* Stat grid */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.stat{background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:14px}
+.stat .ico{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px;margin-bottom:8px}
+.stat .v{font-size:20px;font-weight:800}
+.stat .l{font-size:11.5px;color:var(--muted);font-weight:600}
+
+/* Quick actions */
+.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.qa{background:var(--card);border:none;border-radius:16px;box-shadow:var(--shadow);padding:12px 6px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:7px;font-weight:700;font-size:11px;color:var(--ink)}
+.qa .qi{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px}
+
+/* Chips */
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{background:var(--mint);color:var(--green-d);border:none;border-radius:20px;padding:8px 14px;font-weight:700;font-size:12.5px;cursor:pointer}
+.chip.pink{background:var(--coral-s);color:#d63a5c}
+.chip.violet{background:var(--violet-s);color:#5b3fd6}
+.chip.grey{background:var(--line);color:var(--muted)}
+.chip.sel{background:var(--green);color:#fff}
+.chip.x{background:var(--coral-s);color:#d63a5c}
+
+/* Buttons */
+.btn{display:block;width:100%;text-align:center;background:var(--green);color:#fff;border:none;border-radius:16px;
+  padding:15px;font-weight:800;font-size:15px;cursor:pointer;box-shadow:0 8px 20px rgba(31,174,126,.35)}
+.btn.sec{background:var(--card);color:var(--ink);border:1px solid var(--line);box-shadow:none}
+.btn.pink{background:var(--coral);box-shadow:0 8px 20px rgba(255,111,139,.35)}
+.btn.violet{background:var(--violet);box-shadow:0 8px 20px rgba(124,92,255,.35)}
+.btn.sm{padding:11px;font-size:13.5px;border-radius:13px}
+.btn.ghost{background:transparent;color:var(--green-d);box-shadow:none;border:1px dashed var(--green)}
+
+/* List rows */
+.row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:none}
+.row .ri{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px;flex:0 0 44px}
+.row .rt{flex:1;min-width:0}
+.row .rt b{font-size:14px;font-weight:700;display:block}
+.row .rt small{font-size:12px;color:var(--muted)}
+.row .rv{font-weight:800;font-size:14px;text-align:right}
+.row .rv small{display:block;font-weight:600;color:var(--muted);font-size:11px}
+
+/* Meal option cards */
+.opt{border:1.5px solid var(--line);border-radius:16px;padding:12px;margin-bottom:10px;cursor:pointer;transition:.2s}
+.opt.sel{border-color:var(--green);background:var(--mint)}
+.opt .ot{display:flex;justify-content:space-between;align-items:center}
+.opt .ot b{font-size:14px}
+.opt .ot .kc{font-size:12px;font-weight:700;color:var(--green-d)}
+.opt .od{font-size:12px;color:var(--muted);margin-top:5px}
+
+/* Doctor / product cards */
+.pro{display:flex;gap:12px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:16px;margin-bottom:12px;background:var(--card)}
+.pro .ph{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,#cfeee0,#e9f0ff);display:flex;align-items:center;justify-content:center;font-size:26px;flex:0 0 56px}
+.pro .pi{flex:1;min-width:0}
+.pro .pi b{font-size:14.5px;font-weight:800;display:block}
+.pro .pi small{font-size:12px;color:var(--muted)}
+.pro .rate{font-size:12px;font-weight:700;color:var(--amber)}
+.price{font-weight:800;color:var(--green-d)}
+
+.prod{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px;position:relative}
+.prod .pimg{height:96px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:44px;margin-bottom:10px}
+.prod b{font-size:13.5px;display:block;line-height:1.2}
+.prod .pd{font-size:11px;color:var(--muted);margin:3px 0 8px}
+.prod .prow{display:flex;align-items:center;justify-content:space-between}
+.add{width:34px;height:34px;border-radius:11px;background:var(--green);color:#fff;border:none;font-size:20px;font-weight:700;cursor:pointer;line-height:1}
+.tagbadge{position:absolute;top:10px;right:10px;background:var(--coral);color:#fff;font-size:10px;font-weight:800;padding:3px 8px;border-radius:20px}
+
+/* Calendar */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center}
+.cal .dow{font-size:10px;color:var(--muted);font-weight:700;padding:4px 0}
+.cal .d{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700;border-radius:11px;cursor:pointer;position:relative}
+.cal .d.period{background:var(--coral);color:#fff}
+.cal .d.fertile{background:var(--violet-s);color:#5b3fd6}
+.cal .d.ovul{background:var(--violet);color:#fff}
+.cal .d.today{outline:2px solid var(--ink)}
+.cal .d.pred{background:var(--coral-s);color:#d63a5c}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:11.5px;color:var(--muted);font-weight:600}
+.legend i{width:11px;height:11px;border-radius:4px;display:inline-block;margin-right:5px;vertical-align:-1px}
+
+/* phase strip */
+.phase{display:flex;gap:8px;margin:4px 0 2px}
+.phase div{flex:1;text-align:center;padding:10px 4px;border-radius:12px;font-size:11px;font-weight:700;background:var(--line);color:var(--muted)}
+.phase div.on{background:var(--violet);color:#fff}
+
+/* alert */
+.alert{display:flex;gap:10px;padding:12px 14px;border-radius:14px;font-size:12.5px;line-height:1.5;margin-bottom:12px}
+.alert.warn{background:#fff4e0;color:#8a5a08}
+.alert.ok{background:var(--mint);color:var(--green-d)}
+.alert.info{background:#e8f1ff;color:#245a9e}
+.alert b{font-weight:800}
+
+/* chat */
+.chat{display:flex;flex-direction:column;gap:10px}
+.msg{max-width:82%;padding:11px 14px;border-radius:16px;font-size:13.5px;line-height:1.45}
+.msg.ai{background:var(--card);box-shadow:var(--shadow);align-self:flex-start;border-bottom-left-radius:5px}
+.msg.me{background:var(--green);color:#fff;align-self:flex-end;border-bottom-right-radius:5px}
+.chatbar{display:flex;gap:8px;margin-top:12px}
+.chatbar input{flex:1;border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:13.5px;outline:none}
+.chatbar button{background:var(--green);border:none;color:#fff;border-radius:14px;width:48px;font-size:20px;cursor:pointer}
+
+/* toggle list */
+.tog{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}
+.tog:last-child{border-bottom:none}
+.tog .tt{flex:1}
+.tog .tt b{font-size:13.5px;display:block}
+.tog .tt small{font-size:11.5px;color:var(--muted)}
+.switch{width:46px;height:27px;border-radius:20px;background:var(--line);position:relative;cursor:pointer;flex:0 0 46px;transition:.2s}
+.switch.on{background:var(--green)}
+.switch i{position:absolute;top:3px;left:3px;width:21px;height:21px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 2px 4px rgba(0,0,0,.2)}
+.switch.on i{left:22px}
+
+/* inputs */
+.field{margin-bottom:12px}
+.field label{font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:13px;padding:12px 13px;font-size:14px;outline:none;font-family:inherit;background:var(--card)}
+.seg{display:flex;background:var(--line);border-radius:14px;padding:4px;gap:4px}
+.seg button{flex:1;border:none;background:transparent;padding:9px;border-radius:11px;font-weight:700;font-size:12.5px;color:var(--muted);cursor:pointer}
+.seg button.on{background:var(--card);color:var(--ink);box-shadow:0 2px 6px rgba(0,0,0,.08)}
+
+/* bottom nav */
+.nav{position:absolute;bottom:0;left:0;right:0;height:78px;background:rgba(255,255,255,.92);
+  backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;padding:0 8px 14px}
+.nav button{background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:700;color:var(--muted);cursor:pointer;flex:1}
+.nav button .ni{font-size:21px;line-height:1}
+.nav button.on{color:var(--green-d)}
+.nav .fab{flex:0 0 auto;margin-top:-26px}
+.nav .fab .ni{width:56px;height:56px;border-radius:20px;background:linear-gradient(135deg,var(--green),#3fd39f);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 10px 24px rgba(31,174,126,.5)}
+
+/* toast */
+.toast{position:absolute;left:50%;bottom:100px;transform:translateX(-50%) translateY(20px);background:#10201a;color:#fff;
+  padding:12px 18px;border-radius:14px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:.3s;z-index:50;max-width:80%;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* cart badge */
+.cartbadge{position:absolute;top:-6px;right:8px;background:var(--coral);color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+
+.banner{border-radius:var(--radius);padding:18px;color:#fff;position:relative;overflow:hidden;margin-bottom:16px}
+.banner h4{margin:0 0 6px;font-size:16px;font-weight:800}
+.banner p{margin:0;font-size:12.5px;opacity:.92;line-height:1.5}
+.banner .b-ic{position:absolute;right:-6px;bottom:-10px;font-size:78px;opacity:.22}
+.gg{background:linear-gradient(135deg,var(--green-d),#38c79a)}
+.gv{background:linear-gradient(135deg,#6d4dff,#a07bff)}
+.gp{background:linear-gradient(135deg,#ff6f8b,#ff9a7a)}
+
+/* camera */
+.cam-ov{position:absolute;inset:0;background:#000;z-index:120;display:flex;flex-direction:column;border-radius:40px;overflow:hidden}
+.cam-ov video,.cam-ov img.shot{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.cam-hint{position:absolute;top:60px;left:0;right:0;text-align:center;color:#fff;font-weight:700;font-size:13px;text-shadow:0 1px 6px rgba(0,0,0,.7);z-index:2}
+.cam-frame{position:absolute;inset:120px 40px 200px;border:2px dashed rgba(255,255,255,.6);border-radius:20px;z-index:2}
+.cam-ctrl{position:absolute;bottom:40px;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:34px;z-index:3}
+.cam-shutter{width:74px;height:74px;border-radius:50%;background:#fff;border:5px solid rgba(255,255,255,.45);cursor:pointer;box-shadow:0 0 0 3px rgba(0,0,0,.15)}
+.cam-close{position:absolute;top:52px;right:20px;background:rgba(0,0,0,.45);color:#fff;border:none;width:40px;height:40px;border-radius:50%;font-size:19px;cursor:pointer;z-index:3}
+.cam-gal{position:absolute;bottom:52px;right:34px;background:rgba(255,255,255,.2);color:#fff;border:none;padding:10px 14px;border-radius:12px;font-size:12px;font-weight:700;cursor:pointer;z-index:3}
+.divider{height:1px;background:var(--line);margin:14px 0}
+.tiny{font-size:11px;color:var(--muted);text-align:center;margin-top:6px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar">
+    <span id="clock">9:41</span>
+    <div class="dots"><span></span><span></span><span></span><span style="opacity:.3"></span>
+      <svg width="22" height="12" viewBox="0 0 24 12" style="margin-left:4px"><rect x="0" y="1" width="20" height="10" rx="3" fill="none" stroke="#12211b" stroke-width="1.4"/><rect x="2" y="3" width="14" height="6" rx="1.5" fill="#12211b"/><rect x="21" y="4" width="2" height="4" rx="1" fill="#12211b"/></svg>
+    </div>
+  </div>
+
+  <div class="viewport" id="viewport">
+    <!-- screens injected -->
+  </div>
+
+  <div class="nav" id="nav"></div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+/* ============ STATE ============ */
+const S = {
+  user:{name:"Sara", initials:"S", sex:"F", goal:"Dimagrimento", kcalGoal:1850},
+  intake:{kcal:1240, prot:78, carb:132, fat:44},
+  steps:7420, stepsGoal:10000,
+  water:5, waterGoal:8,
+  sleep:7.2,
+  weight:64.5,
+  wStart:69.0, wNow:64.5, wGoal:60.0, wWeeks:12,
+  disliked:["Peperoni","Frutti di mare","Fegato"],
+  planChoices:{},
+  cart:[],
+  reminders:[
+    {t:"Integratore Omega-3", d:"08:30 · con colazione", on:true, ic:"💊", c:"var(--green)"},
+    {t:"Bere acqua", d:"ogni 2 ore", on:true, ic:"💧", c:"var(--blue)"},
+    {t:"Visita dermatologica estetica", d:"Gio 24 lug · 15:30", on:true, ic:"✨", c:"var(--coral)"},
+    {t:"Assumere Ferro", d:"fase mestruale · 13:00", on:false, ic:"🩸", c:"var(--coral)"},
+    {t:"Allenamento gambe", d:"18:00", on:true, ic:"🏋️", c:"var(--violet)"}
+  ],
+  appointments:[
+    {who:"Dr.ssa Bianchi", spec:"Nutrizionista", when:"Mar 22 lug · 10:00", ic:"🥗", mode:"Video"},
+    {who:"Dr. Ferrari", spec:"Medico estetico", when:"Gio 24 lug · 15:30", ic:"✨", mode:"In studio"}
+  ],
+  today:[
+    {time:"07:30",t:"Pesati e registra il peso",ic:"⚖️",done:true,link:"home"},
+    {time:"08:00",t:"Colazione",meal:0,ic:"🥐",done:true,link:"piano"},
+    {time:"08:30",t:"Integratore Omega-3",ic:"💊",done:true,link:"shop"},
+    {time:"10:30",t:"Camminata · 6.000 passi",ic:"👟",done:false},
+    {time:"13:00",t:"Pranzo",meal:1,ic:"🍲",done:false,link:"piano"},
+    {time:"16:00",t:"Bere 2 bicchieri d'acqua",ic:"💧",done:false,link:"diario"},
+    {time:"18:00",t:"Allenamento · forza gambe",ic:"🏋️",done:false,link:"allenamento"},
+    {time:"20:00",t:"Cena",meal:3,ic:"🐟",done:false,link:"piano"},
+    {time:"22:00",t:"Diario emotivo & respirazione",ic:"🌙",done:false,link:"benessere"}
+  ],
+  moods:[{d:"Lun",v:4},{d:"Mar",v:3},{d:"Mer",v:5},{d:"Gio",v:2},{d:"Ven",v:4},{d:"Sab",v:3},{d:"Dom",v:0}],
+  journal:[
+    {d:"Ieri",mood:"🙂",txt:"Giornata piena ma sono riuscita ad allenarmi. Fiera di me."}
+  ],
+  aiKey:"", aiModel:"claude-3-5-sonnet-latest"
+};
+
+/* ============ WEIGHT & PLAN ENGINE ============ */
+function weightPlan(){
+  const toLose = +(S.wNow - S.wGoal).toFixed(1);        // kg da perdere (o guadagnare se <0)
+  const done   = +(S.wStart - S.wNow).toFixed(1);       // kg già persi
+  const total  = +(S.wStart - S.wGoal).toFixed(1);      // percorso totale
+  const progress = total!==0 ? Math.max(0,Math.min(1, done/total)) : 1;
+  const weeklyKg = +(toLose / Math.max(1,S.wWeeks)).toFixed(2); // ritmo settimanale
+  const maintenance = 2050;                             // TDEE stimato
+  let dailyDelta = Math.round(weeklyKg*7700/7);         // deficit/surplus giornaliero
+  dailyDelta = Math.max(-700, Math.min(700, dailyDelta));// cap sano
+  let kcal = maintenance - dailyDelta;
+  kcal = Math.round(kcal/10)*10;
+  if(kcal<1300) kcal=1300;                              // soglia sicurezza
+  S.user.kcalGoal = kcal;
+  const dir = toLose>0?'perdere':(toLose<0?'aumentare':'mantenere');
+  return {toLose,done,total,progress,weeklyKg:Math.abs(weeklyKg),kcal,dailyDelta,dir,maintenance,
+          etaWeeks: weeklyKg!==0 ? Math.ceil(Math.abs(toLose)/Math.abs(weeklyKg)) : 0};
+}
+
+/* ============ HELPERS ============ */
+function ring(pct,color,size=120,sw=13){
+  const r=(size-sw)/2, c=2*Math.PI*r, off=c*(1-Math.min(pct,1));
+  return `<svg width="${size}" height="${size}">
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="#eef2ef" stroke-width="${sw}"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${color}" stroke-width="${sw}"
+      stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}"/></svg>`;
+}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2200);try{save();}catch(e){}}
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const el=document.getElementById('sc-'+id); if(el){el.classList.add('active');}
+  document.getElementById('viewport').scrollTop=0;
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on', b.dataset.t===id));
+  if(id==='shop') renderCartBadge();
+  try{save();}catch(e){}
+}
+function cartCount(){return S.cart.reduce((a,b)=>a+b.q,0);}
+
+/* ============ PERSISTENZA (salvataggio reale) ============ */
+function save(){ try{ localStorage.setItem('aurea_data', JSON.stringify({S:S, POSTS:POSTS})); }catch(e){} }
+function restore(){ try{
+  const r=localStorage.getItem('aurea_data'); if(!r) return false;
+  const o=JSON.parse(r);
+  if(o.S) Object.keys(o.S).forEach(k=>{ S[k]=o.S[k]; });
+  if(o.POSTS && Array.isArray(o.POSTS)){ POSTS.length=0; o.POSTS.forEach(p=>POSTS.push(p)); }
+  return true;
+}catch(e){ return false; } }
+function resetData(){ try{ localStorage.removeItem('aurea_data'); }catch(e){} location.reload(); }
+
+/* ============ FOTOCAMERA reale ============ */
+function capturePhoto(cb,hint){
+  const phone=document.querySelector('.phone');
+  const ov=document.createElement('div'); ov.className='cam-ov';
+  ov.innerHTML=`<video autoplay playsinline muted></video>
+    <div class="cam-frame"></div>
+    <div class="cam-hint">${hint||'Inquadra e scatta'}</div>
+    <button class="cam-close">✕</button>
+    <button class="cam-gal">🖼️ Galleria</button>
+    <div class="cam-ctrl"><button class="cam-shutter" aria-label="Scatta"></button></div>`;
+  phone.appendChild(ov);
+  const video=ov.querySelector('video'); let stream=null;
+  function stop(){ try{ if(stream) stream.getTracks().forEach(t=>t.stop()); }catch(e){} ov.remove(); }
+  ov.querySelector('.cam-close').onclick=stop;
+  ov.querySelector('.cam-gal').onclick=()=>{ stop(); fileFallback(cb); };
+  ov.querySelector('.cam-shutter').onclick=()=>{
+    const c=document.createElement('canvas');
+    c.width=video.videoWidth||720; c.height=video.videoHeight||960;
+    try{ c.getContext('2d').drawImage(video,0,0,c.width,c.height); }catch(e){}
+    let url; try{ url=c.toDataURL('image/jpeg',0.7);}catch(e){ url=''; }
+    stop(); cb(url);
+  };
+  if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia){
+    navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false})
+      .then(s=>{ stream=s; video.srcObject=s; })
+      .catch(()=>{ ov.remove(); fileFallback(cb); });
+  } else { ov.remove(); fileFallback(cb); }
+}
+function fileFallback(cb){
+  const inp=document.createElement('input');
+  inp.type='file'; inp.accept='image/*'; inp.setAttribute('capture','environment');
+  inp.onchange=()=>{ const f=inp.files&&inp.files[0]; if(!f){return;} const rd=new FileReader(); rd.onload=()=>cb(rd.result); rd.readAsDataURL(f); };
+  inp.click();
+}
+
+/* ============ AI VISION reale (Claude) ============ */
+async function callVision(img,prompt){
+  const key=(S.aiKey||'').trim(); if(!key) throw new Error('nessuna chiave');
+  const b64=(img.split(',')[1])||''; const mt=(img.match(/^data:(image\/[a-zA-Z]+);/)||[])[1]||'image/jpeg';
+  if(!b64) throw new Error('foto vuota');
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:(S.aiModel||'claude-3-5-sonnet-latest'),max_tokens:1200,
+      messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:mt,data:b64}},{type:'text',text:prompt}]}]})
+  });
+  if(!res.ok){ let d=''; try{d=(await res.json()).error?.message||'';}catch(e){} throw new Error('errore '+res.status+(d?' · '+d:'')); }
+  const data=await res.json();
+  let txt=(data.content&&data.content[0]&&data.content[0].text)||'';
+  const m=txt.match(/\{[\s\S]*\}/); if(!m) throw new Error('risposta non valida');
+  return JSON.parse(m[0]);
+}
+function saveAiKey(){
+  const k=document.getElementById('ai-key').value.trim();
+  const mo=document.getElementById('ai-model').value.trim();
+  S.aiKey=k; if(mo)S.aiModel=mo; save();
+  rebuild('profilo'); go('profilo');
+  toast(k?'Riconoscimento AI attivato ✓':'Chiave rimossa · torno alla demo');
+}
+
+/* ============ NAV ============ */
+const NAV=[
+  {id:'home',ic:'🏠',l:'Home'},
+  {id:'piano',ic:'🥗',l:'Piano'},
+  {id:'planning',ic:'📆',l:'Planning',fab:true},
+  {id:'benessere',ic:'💚',l:'Benessere'},
+  {id:'profilo',ic:'👤',l:'Profilo'}
+];
+function renderNav(){
+  document.getElementById('nav').innerHTML=NAV.map(n=>
+    n.fab
+    ? `<button class="fab" data-t="${n.id}" onclick="go('${n.id}')"><span class="ni" style="font-size:24px">${n.ic}</span></button>`
+    : `<button data-t="${n.id}" onclick="go('${n.id}')"><span class="ni">${n.ic}</span>${n.l}${n.id==='shop'?'<span class="cartbadge" id="navcart" style="display:none"></span>':''}</button>`
+  ).join('');
+}
+function renderCartBadge(){
+  const b=document.getElementById('navcart'); if(!b) return;
+  const c=cartCount(); b.style.display=c?'flex':'none'; b.textContent=c;
+}
+
+/* ============ SCREENS ============ */
+const V=document.getElementById('viewport');
+function screen(id,html){const d=document.createElement('div');d.className='screen';d.id='sc-'+id;d.innerHTML=html;V.appendChild(d);}
+
+/* ---------- HOME ---------- */
+function homeHTML(){
+  const wp=weightPlan();
+  const kc=S.intake.kcal, kg=S.user.kcalGoal, left=kg-kc;
+  return `
+  <div class="topbar">
+    <div class="hello"><div class="k">Domenica, 19 luglio</div><div class="n">Ciao, ${S.user.name} 👋</div></div>
+    <div class="avatar" onclick="go('profilo')">${S.user.initials}</div>
+  </div>
+
+  <div class="card">
+    <div class="ring-wrap">
+      <div class="ring">${ring(kc/kg,'var(--green)')}
+        <div class="c-val"><b>${left>0?left:0}</b><small>kcal rimaste</small></div></div>
+      <div class="macros">
+        <div class="macro"><div class="lbl"><span>Proteine</span><span>${S.intake.prot}/120 g</span></div><div class="bar"><i style="width:${S.intake.prot/120*100}%;background:var(--green)"></i></div></div>
+        <div class="macro"><div class="lbl"><span>Carboidrati</span><span>${S.intake.carb}/200 g</span></div><div class="bar"><i style="width:${S.intake.carb/200*100}%;background:var(--amber)"></i></div></div>
+        <div class="macro"><div class="lbl"><span>Grassi</span><span>${S.intake.fat}/60 g</span></div><div class="bar"><i style="width:${S.intake.fat/60*100}%;background:var(--coral)"></i></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid3" style="margin-bottom:16px">
+    <div class="stat"><div class="ico" style="background:#e8f1ff;color:var(--blue)">👟</div><div class="v">${(S.steps/1000).toFixed(1)}k</div><div class="l">Passi / 10k</div></div>
+    <div class="stat"><div class="ico" style="background:#e8f6ff;color:#2a9adf">💧</div><div class="v">${S.water}/${S.waterGoal}</div><div class="l">Bicchieri</div></div>
+    <div class="stat"><div class="ico" style="background:var(--violet-s);color:var(--violet)">😴</div><div class="v">${S.sleep}h</div><div class="l">Sonno</div></div>
+  </div>
+
+  <div class="section-title">Obiettivo peso <span class="more" onclick="go('piano')">Adatta piano</span></div>
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+      <div><div style="font-size:26px;font-weight:800">${S.wNow} <small style="font-size:13px;color:var(--muted);font-weight:600">kg</small></div><div class="sub">da ${S.wStart} kg → obiettivo ${S.wGoal} kg</div></div>
+      <div style="text-align:right"><div style="font-size:20px;font-weight:800;color:var(--green-d)">${wp.toLose>0?'-'+wp.toLose:(wp.toLose<0?'+'+Math.abs(wp.toLose):'0')} kg</div><div class="sub">${wp.toLose>0?'da perdere':(wp.toLose<0?'da aumentare':'raggiunto ✓')}</div></div>
+    </div>
+    <div class="bar" style="height:12px;margin:10px 0 6px"><i style="width:${(wp.progress*100).toFixed(0)}%;background:linear-gradient(90deg,var(--green),#4bd4a6)"></i></div>
+    <div style="display:flex;justify-content:space-between" class="sub"><span>${(wp.progress*100).toFixed(0)}% del percorso</span><span>${wp.done>0?wp.done+' kg fatti':''}</span></div>
+    <div class="alert ok" style="margin:14px 0 0"><span>🎯</span><div>Per raggiungere <b>${S.wGoal} kg</b> l'AI imposta <b>${wp.kcal} kcal/giorno</b> (${wp.dailyDelta>0?'-'+wp.dailyDelta:'+'+Math.abs(wp.dailyDelta)} kcal) → ~${wp.weeklyKg} kg/settimana. Stima: <b>${wp.etaWeeks} settimane</b>.</div></div>
+    <button class="btn sm sec" style="margin-top:12px" onclick="editWeight()">✏️ Aggiorna peso di oggi</button>
+  </div>
+
+  <div class="section-title">Accesso rapido</div>
+  <div class="quick" style="margin-bottom:8px">
+    <button class="qa" onclick="go('diario')"><span class="qi" style="background:var(--mint)">📔</span>Diario</button>
+    <button class="qa" onclick="go('scanner')"><span class="qi" style="background:#e8f1ff">📷</span>Scanner</button>
+    <button class="qa" onclick="go('coach')"><span class="qi" style="background:var(--violet-s)">🤖</span>Coach AI</button>
+    <button class="qa" onclick="go('allenamento')"><span class="qi" style="background:#fff0e0">🏋️</span>Workout</button>
+  </div>
+  <div class="quick" style="margin-bottom:8px">
+    <button class="qa" onclick="go('ciclo')"><span class="qi" style="background:var(--coral-s)">🌸</span>Ciclo</button>
+    <button class="qa" onclick="go('prenota')"><span class="qi" style="background:#e8f1ff">🩺</span>Prenota</button>
+    <button class="qa" onclick="go('shop')"><span class="qi" style="background:var(--mint)">💊</span>Integr.</button>
+    <button class="qa" onclick="go('promemoria')"><span class="qi" style="background:#fff0e0">⏰</span>Promem.</button>
+  </div>
+  <div class="quick" style="margin-bottom:8px">
+    <button class="qa" onclick="go('planning')"><span class="qi" style="background:#e8f1ff">📆</span>Calendario</button>
+    <button class="qa" onclick="go('benessere')"><span class="qi" style="background:var(--mint)">💚</span>Benessere</button>
+    <button class="qa" onclick="go('community')"><span class="qi" style="background:var(--coral-s)">👥</span>Community</button>
+    <button class="qa" onclick="go('frigo')"><span class="qi" style="background:var(--violet-s)">🧊</span>Frigo</button>
+  </div>
+  <div class="quick">
+    <button class="qa" onclick="go('shop')"><span class="qi" style="background:var(--mint)">🛍️</span>Shop</button>
+    <button class="qa" onclick="go('coach')"><span class="qi" style="background:var(--violet-s)">🤖</span>Coach</button>
+    <button class="qa" onclick="go('allenamento')"><span class="qi" style="background:#fff0e0">🏋️</span>Workout</button>
+    <button class="qa" onclick="go('profilo')"><span class="qi" style="background:#e8f1ff">📄</span>Report</button>
+  </div>
+
+  <div class="section-title">Prossimi appuntamenti <span class="more" onclick="go('prenota')">Vedi tutti</span></div>
+  <div class="card tight" id="home-appts"></div>
+
+  <div class="banner gp" onclick="go('ciclo')" style="margin-top:16px;cursor:pointer">
+    <span class="b-ic">🌸</span>
+    <h4>Fase follicolare · giorno 9</h4>
+    <p>Energia in aumento. Buon momento per allenamenti intensi e cibi ricchi di ferro. Tocca per i dettagli.</p>
+  </div>
+
+  <div class="section-title">Il tuo oggi <span class="more" onclick="go('planning')">Planning →</span></div>
+  <div class="card tight">
+    <div class="row" onclick="go('planning')" style="cursor:pointer;padding:8px 0">
+      <div class="ri" style="background:#e8f1ff">📆</div>
+      <div class="rt"><b>${S.today.filter(x=>x.done).length}/${S.today.length} attività completate</b><small>pasti, integratori, workout e appuntamenti</small></div>
+      <div class="rv">›</div>
+    </div>
+    <div class="row" onclick="go('benessere')" style="cursor:pointer;padding:8px 0;border-bottom:none">
+      <div class="ri" style="background:var(--mint)">💚</div>
+      <div class="rt"><b>Come ti senti oggi?</b><small>Registra umore e pensieri</small></div>
+      <div class="rv">›</div>
+    </div>
+  </div>
+
+  <div class="section-title">Consiglio del giorno</div>
+  <div class="card">
+    <div class="alert ok" style="margin:0"><span>💡</span><div><b>Idratazione.</b> Ti mancano 3 bicchieri d'acqua per l'obiettivo. Ti ho impostato un promemoria alle 16:00.</div></div>
+  </div>
+
+  <div class="banner gp" onclick="go('community')" style="cursor:pointer">
+    <span class="b-ic">👥</span><h4>La community ti aspetta</h4><p>2.4k persone come te: ricette, consigli e supporto. 12 nuovi post oggi.</p>
+  </div>
+
+  <div class="section-title">Integratori consigliati per te</div>
+  ${suppRecoCard('In base al tuo percorso','Collegati a obiettivo peso, fase del ciclo ed energia di oggi:','home')}
+  `;
+}
+function renderHomeAppts(){
+  document.getElementById('home-appts').innerHTML = S.appointments.map(a=>`
+    <div class="row">
+      <div class="ri" style="background:var(--mint)">${a.ic}</div>
+      <div class="rt"><b>${a.who}</b><small>${a.spec} · ${a.mode}</small></div>
+      <div class="rv" style="font-size:12px;color:var(--green-d)">${a.when.split('·')[0]}<small>${a.when.split('·')[1]||''}</small></div>
+    </div>`).join('') || '<div class="sub">Nessun appuntamento.</div>';
+}
+
+/* ---------- DIARIO ---------- */
+const MEALS=[
+  {n:"Colazione",ic:"🥐",items:[{f:"Yogurt greco + mirtilli",k:210},{f:"Fette avena e miele",k:180}],k:390,g:450},
+  {n:"Pranzo",ic:"🍲",items:[{f:"Pollo alla griglia",k:280},{f:"Riso venere + verdure",k:240}],k:520,g:600},
+  {n:"Spuntino",ic:"🍎",items:[{f:"Mela + mandorle",k:160}],k:160,g:200},
+  {n:"Cena",ic:"🐟",items:[],k:0,g:600}
+];
+function diarioHTML(){
+  return `
+  <button class="back" onclick="go('home')">← Indietro</button>
+  <div class="topbar" style="padding-top:0"><div class="hello"><div class="k">Oggi · ${S.intake.kcal} / ${S.user.kcalGoal} kcal</div><div class="n">Diario alimentare</div></div></div>
+
+  <div class="grid2" style="margin-bottom:4px">
+    <button class="btn sm" onclick="go('scanner')">📷 Scansiona pasto</button>
+    <button class="btn sm sec" onclick="addFood()">＋ Aggiungi cibo</button>
+  </div>
+
+  <div style="margin-top:14px">
+  ${MEALS.map((m,i)=>`
+    <div class="card tight">
+      <div class="h" style="margin-bottom:8px">${m.ic} ${m.n}<span class="pill">${m.k}/${m.g} kcal</span></div>
+      ${m.items.map(it=>`<div class="row" style="padding:9px 0"><div class="rt"><b>${it.f}</b></div><div class="rv" style="font-size:13px">${it.k}<small>kcal</small></div></div>`).join('') || '<div class="sub">Niente registrato — tocca + per aggiungere.</div>'}
+      <button class="btn ghost sm" style="margin-top:10px" onclick="addFood('${m.n}')">＋ Aggiungi a ${m.n}</button>
+    </div>`).join('')}
+  </div>
+
+  <div class="card">
+    <div class="h">💧 Idratazione</div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap">
+    ${Array.from({length:S.waterGoal}).map((_,i)=>`<span onclick="setWater(${i+1})" style="cursor:pointer;font-size:30px;opacity:${i<S.water?1:.25}">💧</span>`).join('')}
+    </div>
+    <div class="sub" style="margin-top:8px">${S.water} di ${S.waterGoal} bicchieri · tocca per aggiornare</div>
+  </div>`;
+}
+function setWater(n){S.water=n;rebuild('diario');rebuild('home');go('diario');toast('Idratazione aggiornata');}
+function editWeight(){
+  const v=prompt('Peso di oggi (kg):', S.wNow);
+  if(v===null)return;
+  const n=parseFloat((''+v).replace(',','.'));
+  if(isNaN(n)||n<30||n>300){toast('Valore non valido');return;}
+  S.wNow=+n.toFixed(1); S.weight=S.wNow;
+  const wp=weightPlan();
+  rebuild('home');rebuild('piano');go('home');
+  toast('Peso aggiornato · piano ricalcolato: '+wp.kcal+' kcal');
+}
+function addFood(m){const meal=m||'pasto';const opts=["Salmone al forno (320 kcal)","Insalata di quinoa (260 kcal)","Frittata di albumi (190 kcal)"];const pick=opts[Math.floor((S.intake.kcal)%3)];S.intake.kcal+=190;S.intake.prot+=14;toast('Aggiunto: '+pick+' → '+meal);rebuild('home');rebuild('diario');go('diario');}
+
+/* ---------- SCANNER ---------- */
+function scannerHTML(){
+  return `
+  <button class="back" onclick="go('diario')">← Indietro</button>
+  <div class="topbar" style="padding-top:0"><div class="hello"><div class="k">Riconoscimento AI</div><div class="n">Scanner pasto</div></div></div>
+
+  <div class="card" style="text-align:center;background:linear-gradient(135deg,#10201a,#1c3830);color:#fff">
+    <div style="height:220px;border-radius:16px;border:2px dashed rgba(255,255,255,.3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
+      <div style="font-size:64px">🍽️</div>
+      <div style="font-size:13px;opacity:.8">Inquadra il piatto</div>
+    </div>
+    <button class="btn" style="margin-top:16px" onclick="capturePhoto(scanMeal,'Inquadra il piatto e scatta')">📸 Apri fotocamera</button>
+    <button class="btn sec sm" style="margin-top:10px;background:transparent;color:#fff;border-color:rgba(255,255,255,.3)" onclick="fileFallback(scanMeal)">🖼️ Carica una foto</button>
+  </div>
+
+  <div id="scan-res"></div>
+  <div class="alert info"><span>🤖</span><div>L'AI stima porzioni, calorie e macro dalla foto reale. Puoi correggere prima di salvare.</div></div>`;
+}
+const MEAL_DEMO={match:92,items:[{food:"Petto di pollo",emoji:"🍗",grams:150,kcal:248},{food:"Riso basmati",emoji:"🍚",grams:120,kcal:156},{food:"Broccoli",emoji:"🥦",grams:90,kcal:31}],total:{kcal:435,prot:46,carb:42,fat:9}};
+async function scanMeal(img){
+  const r=document.getElementById('scan-res');
+  const photo=img?`<img src="${img}" class="shot" style="width:100%;border-radius:14px;margin-bottom:12px;position:static;height:auto;object-fit:cover;max-height:200px">`:'';
+  r.innerHTML=`<div class="card" style="text-align:center">${photo}<div class="sub">${S.aiKey?'🤖 Claude sta analizzando la foto…':'Analisi (demo) in corso…'}</div></div>`;
+  if(S.aiKey && img){
+    try{
+      const prompt=`Sei un nutrizionista. Analizza questa foto di un pasto e stima gli alimenti con porzioni e valori nutrizionali. Rispondi SOLO con JSON valido, nessun altro testo, in questo formato esatto: {"match":85,"items":[{"food":"nome","emoji":"🍗","grams":150,"kcal":248,"prot":46,"carb":0,"fat":9}],"total":{"kcal":435,"prot":46,"carb":42,"fat":9}}. Usa il singolo emoji più adatto per ogni alimento. Se non è cibo, restituisci items vuoto.`;
+      const j=await callVision(img,prompt);
+      renderMeal(r,photo,j,true); return;
+    }catch(e){ toast('AI non disponibile: '+e.message+' · uso stima demo'); }
+  }
+  setTimeout(()=>renderMeal(r,photo,MEAL_DEMO,false),900);
+}
+function renderMeal(r,photo,j,real){
+  const items=(j.items||[]);
+  const tot=j.total||{kcal:items.reduce((a,b)=>a+(b.kcal||0),0),prot:0,carb:0,fat:0};
+  r.innerHTML=`
+    <div class="card">
+      ${photo}
+      <div class="h">${items.length?'✅ Piatto riconosciuto':'🤔 Nessun cibo rilevato'} <span class="pill">${real?'AI reale':'demo'}${j.match?' · '+j.match+'%':''}</span></div>
+      ${items.map(it=>`<div class="row"><div class="ri" style="background:var(--mint)">${it.emoji||'🍽️'}</div><div class="rt"><b>${it.food||it.name}</b><small>≈ ${it.grams||'?'} g</small></div><div class="rv">${it.kcal||0}<small>kcal</small></div></div>`).join('')}
+      ${items.length?`<div class="divider"></div>
+      <div class="row"><div class="rt"><b>Totale stimato</b><small>P ${tot.prot||0}g · C ${tot.carb||0}g · G ${tot.fat||0}g</small></div><div class="rv" style="color:var(--green-d)">${tot.kcal||0}<small>kcal</small></div></div>
+      <button class="btn" style="margin-top:12px" onclick="S.intake.kcal+=${tot.kcal||0};S.intake.prot+=${tot.prot||0};rebuild('home');rebuild('diario');toast('Pasto salvato nel diario');go('diario')">Salva nel diario</button>`:''}
+    </div>`;
+}
+
+/* ---------- PIANO NUTRIZIONALE ---------- */
+const PLAN=[
+  {n:"Colazione",ic:"🥐",opts:[
+    {t:"Porridge avena, banana e burro d'arachidi",k:380,d:"P 14 · C 52 · G 12"},
+    {t:"Yogurt greco, granola e frutti rossi",k:340,d:"P 22 · C 38 · G 9"},
+    {t:"Pancake proteici e sciroppo d'acero",k:360,d:"P 28 · C 40 · G 8"}
+  ]},
+  {n:"Pranzo",ic:"🍲",opts:[
+    {t:"Pollo, quinoa e verdure grigliate",k:520,d:"P 42 · C 48 · G 14"},
+    {t:"Salmone, patate dolci e spinaci",k:560,d:"P 38 · C 44 · G 22"},
+    {t:"Bowl di legumi, avocado e riso integrale",k:540,d:"P 24 · C 66 · G 18 · veg"}
+  ]},
+  {n:"Spuntino",ic:"🍎",opts:[
+    {t:"Frutta secca e mela",k:200,d:"P 6 · C 22 · G 11"},
+    {t:"Skyr e cannella",k:150,d:"P 18 · C 10 · G 2"},
+    {t:"Hummus e carote",k:180,d:"P 7 · C 20 · G 9 · veg"}
+  ]},
+  {n:"Cena",ic:"🐟",opts:[
+    {t:"Merluzzo al forno e verdure",k:430,d:"P 40 · C 26 · G 12"},
+    {t:"Frittata di albumi e insalata",k:390,d:"P 34 · C 14 · G 18"},
+    {t:"Tofu saltato e riso venere",k:460,d:"P 26 · C 52 · G 14 · veg"}
+  ]}
+];
+function planHTML(){
+  const wp=weightPlan();
+  return `
+  <div class="topbar"><div class="hello"><div class="k">Obiettivo: ${S.user.goal}</div><div class="n">Piano nutrizionale</div></div><div class="avatar" onclick="go('profilo')">${S.user.initials}</div></div>
+
+  <div class="banner gg"><span class="b-ic">🥗</span><h4>${wp.kcal.toLocaleString('it-IT')} kcal · 5 pasti</h4><p>Piano calcolato per portarti da ${S.wStart} a ${S.wGoal} kg (~${wp.weeklyKg} kg/sett). Scegli tra più opzioni per ogni pasto e adattalo ai tuoi gusti.</p></div>
+
+  <div class="card">
+    <div class="h">🎯 Piano legato al peso obiettivo</div>
+    <div class="ring-wrap">
+      <div class="ring">${ring(wp.progress,'var(--green)',96,11)}<div class="c-val"><b style="font-size:20px">${(wp.progress*100).toFixed(0)}%</b><small>percorso</small></div></div>
+      <div style="flex:1">
+        <div class="row" style="padding:7px 0"><div class="rt"><b>${S.wNow} kg</b><small>peso attuale</small></div><div class="rv" style="color:var(--green-d)">${wp.toLose>0?'-'+wp.toLose:(wp.toLose<0?'+'+Math.abs(wp.toLose):'✓')} kg</div></div>
+        <div class="row" style="padding:7px 0"><div class="rt"><b>${wp.kcal} kcal/dì</b><small>${wp.dailyDelta>0?'deficit '+wp.dailyDelta:'surplus '+Math.abs(wp.dailyDelta)} kcal</small></div><div class="rv" style="font-size:12px;color:var(--muted)">TDEE ${wp.maintenance}</div></div>
+        <div class="row" style="padding:7px 0"><div class="rt"><b>~${wp.etaWeeks} settimane</b><small>al traguardo</small></div><div class="rv" style="font-size:12px;color:var(--muted)">${wp.weeklyKg} kg/s</div></div>
+      </div>
+    </div>
+    <div class="sub" style="margin:12px 0 6px">Ritmo di ${S.wNow} kg → ${S.wGoal} kg</div>
+    <input type="range" min="4" max="24" value="${S.wWeeks}" style="width:100%" oninput="S.wWeeks=+this.value;document.getElementById('wk-lbl').textContent=this.value">
+    <div class="sub" style="text-align:center">Traguardo in <b id="wk-lbl">${S.wWeeks}</b> settimane · <a onclick="rebuild('piano');go('piano')" style="color:var(--green-d);font-weight:700;cursor:pointer">ricalcola</a></div>
+    <div class="alert info" style="margin-top:12px"><span>🔄</span><div>Man mano che aggiorni il peso, calorie e porzioni dei pasti qui sotto si riadattano automaticamente.</div></div>
+  </div>
+
+  <div class="card">
+    <div class="h">🚫 Alimenti che non gradisci</div>
+    <div class="sub" style="margin-bottom:10px">L'AI esclude questi cibi da tutte le proposte e suggerisce alternative equivalenti.</div>
+    <div class="chips" id="dislike-chips"></div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <input id="dislike-input" placeholder="Aggiungi alimento (es. cipolla)" style="flex:1;border:1px solid var(--line);border-radius:13px;padding:11px 13px;font-size:13.5px;outline:none">
+      <button class="btn sm" style="width:auto;padding:11px 16px" onclick="addDislike()">Aggiungi</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="h">🍽️ Preferenze dieta</div>
+    <div class="seg" id="diet-seg">
+      ${["Onnivora","Vegetariana","Vegana","Low-carb"].map((d,i)=>`<button class="${i===0?'on':''}" onclick="segPick('diet-seg',this);toast('Piano adattato: '+this.textContent)">${d}</button>`).join('')}
+    </div>
+  </div>
+
+  <div class="section-title">I tuoi pasti · scegli l'opzione</div>
+  ${PLAN.map((m,mi)=>`
+    <div class="card">
+      <div class="h">${m.ic} ${m.n}<span class="pill">${m.opts.length} opzioni</span></div>
+      ${m.opts.map((o,oi)=>`
+        <div class="opt ${oi===0?'sel':''}" id="opt-${mi}-${oi}" onclick="pickOpt(${mi},${oi})">
+          <div class="ot"><b>${o.t}</b><span class="kc">${o.k} kcal</span></div>
+          <div class="od">${o.d}</div>
+        </div>`).join('')}
+      <button class="btn ghost sm" onclick="toast('Nuove alternative generate per ${m.n}')">🔄 Genera altre alternative</button>
+    </div>`).join('')}
+
+  <button class="btn" onclick="go('frigo')">🛒 Crea lista della spesa dal frigo</button>
+  <div class="tiny">Fotografa il frigo: l'AI crea la spesa mancante e i piatti fattibili ora.</div>
+  `;
+}
+function renderDislike(){
+  const c=document.getElementById('dislike-chips'); if(!c)return;
+  c.innerHTML=S.disliked.map((d,i)=>`<button class="chip x" onclick="rmDislike(${i})">${d} ✕</button>`).join('') || '<span class="sub">Nessuno — l\'AI userà tutti gli alimenti.</span>';
+}
+function addDislike(){const el=document.getElementById('dislike-input');const v=el.value.trim();if(!v)return;S.disliked.push(v);el.value='';renderDislike();toast('"'+v+'" escluso dal piano');}
+function rmDislike(i){const n=S.disliked[i];S.disliked.splice(i,1);renderDislike();toast(n+' reintrodotto');}
+function pickOpt(mi,oi){PLAN[mi].opts.forEach((_,j)=>{const e=document.getElementById('opt-'+mi+'-'+j);if(e)e.classList.toggle('sel',j===oi);});S.planChoices[mi]=oi;toast('Opzione selezionata per '+PLAN[mi].n);}
+function segPick(id,btn){document.querySelectorAll('#'+id+' button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
+
+/* ---------- CICLO / ORMONALE ---------- */
+function cicloHTML(){
+  // giorno corrente ciclo = 9
+  const days=Array.from({length:35},(_,i)=>i+1);
+  return `
+  <div class="topbar"><div class="hello"><div class="k">Ciclo · giorno 9 di 28</div><div class="n">Salute femminile 🌸</div></div><div class="avatar" onclick="go('profilo')">${S.user.initials}</div></div>
+
+  <div class="banner gp"><span class="b-ic">🌸</span><h4>Fase follicolare</h4><p>Estrogeni in aumento · energia e umore in crescita. Prossime mestruazioni stimate: 8 agosto.</p></div>
+
+  <div class="phase">
+    <div>Mestruale</div><div class="on">Follicolare</div><div>Ovulatoria</div><div>Luteale</div>
+  </div>
+
+  <div class="card">
+    <div class="h">📅 Calendario ciclo <span class="pill">Luglio</span></div>
+    <div class="cal">
+      ${["L","M","M","G","V","S","D"].map(d=>`<div class="dow">${d}</div>`).join('')}
+      ${days.map(d=>{
+        let cls='';
+        if(d>=1&&d<=5) cls='period';
+        else if(d>=8&&d<=12) cls='fertile';
+        else if(d===13) cls='ovul';
+        else if(d>=29&&d<=33) cls='pred';
+        if(d===9) cls+=' today';
+        return `<div class="d ${cls}">${d<=31?d:''}</div>`;
+      }).join('')}
+    </div>
+    <div class="legend">
+      <span><i style="background:var(--coral)"></i>Mestruazioni</span>
+      <span><i style="background:var(--violet-s)"></i>Finestra fertile</span>
+      <span><i style="background:var(--violet)"></i>Ovulazione</span>
+      <span><i style="background:var(--coral-s)"></i>Previsione</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="h">🩺 Rilevamento disfunzioni</div>
+    <div class="alert warn"><span>⚠️</span><div><b>Cicli irregolari rilevati.</b> Negli ultimi 4 mesi la durata è variata di 9 giorni (21–30). Possibile segnale ormonale da approfondire.</div></div>
+    <div class="alert info"><span>📊</span><div>Sintomi ricorrenti in fase luteale: acne, gonfiore, sbalzi d'umore. Pattern compatibile con sensibilità ormonale.</div></div>
+    <button class="btn pink sm" onclick="go('prenota')">Prenota visita ginecologica / endocrinologica</button>
+  </div>
+
+  <div class="card">
+    <div class="h">📝 Registra oggi</div>
+    <div class="sub" style="margin-bottom:8px">Flusso</div>
+    <div class="chips" style="margin-bottom:12px">${["Assente","Leggero","Medio","Abbondante"].map(f=>`<button class="chip pink" onclick="segSelect(this)">${f}</button>`).join('')}</div>
+    <div class="sub" style="margin-bottom:8px">Sintomi</div>
+    <div class="chips" style="margin-bottom:12px">${["Crampi","Mal di testa","Acne","Gonfiore","Stanchezza","Umore ↓","Fame","Seno dolente"].map(f=>`<button class="chip violet" onclick="this.classList.toggle('sel')">${f}</button>`).join('')}</div>
+    <div class="sub" style="margin-bottom:8px">Umore & energia</div>
+    <div class="chips" style="margin-bottom:14px">${["😀","🙂","😐","😞","😣"].map(f=>`<button class="chip grey" style="font-size:18px" onclick="segSelect(this)">${f}</button>`).join('')}</div>
+    <button class="btn pink" onclick="toast('Dati del giorno salvati 🌸')">Salva registrazione</button>
+  </div>
+
+  <div class="card">
+    <div class="h">🍽️ Nutrizione per la tua fase</div>
+    <div class="sub">In fase follicolare l'AI aumenta ferro e proteine e propone allenamenti più intensi. <a onclick="go('piano')" style="color:var(--green-d);font-weight:700;cursor:pointer">Vedi piano →</a></div>
+  </div>
+
+  ${suppRecoCard('Integratori per la tua fase','Selezionati in base al ciclo e ai sintomi che registri:','ciclo')}
+
+  <div class="card">
+    <div class="h">🤖 Previsioni AI</div>
+    <div class="row"><div class="ri" style="background:var(--coral-s)">🩸</div><div class="rt"><b>Prossime mestruazioni</b><small>tra 20 giorni</small></div><div class="rv" style="color:var(--coral)">8 ago</div></div>
+    <div class="row"><div class="ri" style="background:var(--violet-s)">🥚</div><div class="rt"><b>Ovulazione stimata</b><small>finestra fertile aperta</small></div><div class="rv" style="color:var(--violet)">24 lug</div></div>
+    <div class="row"><div class="ri" style="background:var(--mint)">📈</div><div class="rt"><b>Regolarità</b><small>media 26 gg · varianza alta</small></div><div class="rv" style="color:var(--amber)">Media</div></div>
+  </div>
+  `;
+}
+function segSelect(btn){const p=btn.parentNode;p.querySelectorAll('.chip').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');}
+
+/* ---------- PRENOTA ---------- */
+const DOCTORS=[
+  {n:"Dr.ssa Bianchi",s:"Nutrizionista",ic:"🥗",r:"4.9",p:"€60",tags:["Video","In studio"],when:"Prima disp. domani"},
+  {n:"Dr. Ferrari",s:"Medico estetico",ic:"✨",r:"4.8",p:"€90",tags:["In studio"],when:"Gio 24 lug"},
+  {n:"Dr.ssa Greco",s:"Diabetologo",ic:"🩸",r:"5.0",p:"€75",tags:["Video","In studio"],when:"Lun 21 lug"},
+  {n:"Dr. Russo",s:"Dermatologo estetico",ic:"🧴",r:"4.7",p:"€85",tags:["In studio"],when:"Mer 23 lug"},
+  {n:"Dr.ssa Costa",s:"Endocrinologo",ic:"⚕️",r:"4.9",p:"€100",tags:["Video"],when:"Ven 25 lug"},
+  {n:"Dr.ssa Marino",s:"Ginecologo",ic:"🌸",r:"4.9",p:"€80",tags:["Video","In studio"],when:"Mar 22 lug"},
+  {n:"Est. Lombardi",s:"Estetista · trattamenti viso",ic:"💆",r:"4.8",p:"€45",tags:["In studio"],when:"Oggi 18:00"},
+  {n:"Dr. Conti",s:"Personal trainer",ic:"🏋️",r:"4.8",p:"€40",tags:["Video","In palestra"],when:"Domani 7:00"},
+  {n:"Dr.ssa Fontana",s:"Psicologa · supporto emotivo",ic:"🧠",r:"5.0",p:"€70",tags:["Video","In studio"],when:"Lun 21 lug"},
+  {n:"Dr.ssa Vitale",s:"Psiconutrizionista",ic:"💚",r:"4.9",p:"€65",tags:["Video"],when:"Mer 23 lug"}
+];
+const SPECS=["Tutti","Nutrizionista","Estetico","Psicologa","Diabetologo","Dermatologo","Ginecologo","Endocrinologo","Trainer"];
+function prenotaHTML(){
+  return `
+  <div class="topbar"><div class="hello"><div class="k">Salute · Estetica · Benessere</div><div class="n">Prenota appuntamento</div></div><div class="avatar" onclick="go('profilo')">${S.user.initials}</div></div>
+
+  <div class="chips" style="margin-bottom:16px;overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px" id="spec-filter">
+    ${SPECS.map((s,i)=>`<button class="chip ${i===0?'sel':''}" style="white-space:nowrap" onclick="filterDocs('${s}',this)">${s}</button>`).join('')}
+  </div>
+
+  <div class="section-title" style="margin-top:0">I tuoi appuntamenti</div>
+  <div class="card tight" id="my-appts"></div>
+
+  <div class="section-title">Professionisti disponibili</div>
+  <div id="doc-list"></div>
+  `;
+}
+function renderMyAppts(){
+  const c=document.getElementById('my-appts'); if(!c)return;
+  c.innerHTML=S.appointments.map(a=>`
+    <div class="row">
+      <div class="ri" style="background:var(--mint)">${a.ic}</div>
+      <div class="rt"><b>${a.who}</b><small>${a.spec} · ${a.when}</small></div>
+      <div class="rv"><span class="chip grey" style="padding:5px 9px;font-size:10px">${a.mode}</span></div>
+    </div>`).join('') || '<div class="sub">Nessun appuntamento in programma.</div>';
+}
+function renderDocs(filter){
+  const c=document.getElementById('doc-list'); if(!c)return;
+  const list=(!filter||filter==='Tutti')?DOCTORS:DOCTORS.filter(d=>d.s.toLowerCase().includes(filter.toLowerCase()));
+  c.innerHTML=list.map((d,i)=>`
+    <div class="pro">
+      <div class="ph">${d.ic}</div>
+      <div class="pi">
+        <b>${d.n}</b>
+        <small>${d.s}</small>
+        <div style="margin-top:5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span class="rate">★ ${d.r}</span>
+          <span class="sub" style="font-size:11px">· ${d.when}</span>
+          <span class="price" style="font-size:12px">· ${d.p}</span>
+        </div>
+      </div>
+      <button class="btn sm" style="width:auto;padding:10px 12px;align-self:center" onclick="book('${d.n}','${d.s}','${d.ic}','${d.when}')">Prenota</button>
+    </div>`).join('');
+}
+function filterDocs(s,btn){document.querySelectorAll('#spec-filter .chip').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');renderDocs(s);}
+function book(n,s,ic,when){
+  S.appointments.unshift({who:n,spec:s,when:when.replace('Prima disp. ','').replace('Oggi ','Oggi · ').replace('Domani ','Domani · ')+ (when.includes(':')?'':' · 10:00'),ic:ic,mode:"Da confermare"});
+  S.reminders.unshift({t:"Appuntamento "+s,d:n+" · promemoria 1h prima",on:true,ic:ic,c:"var(--coral)"});
+  renderMyAppts();renderHomeAppts();rebuild('home');rebuild('promemoria');
+  toast('Prenotato con '+n+' · promemoria impostato');
+}
+
+/* ---------- SHOP INTEGRATORI ---------- */
+const PRODUCTS=[
+  {n:"Omega-3 Ultra",d:"Salute cuore & pelle",p:24.90,ic:"🐟",bg:"#e8f1ff",tag:"Best seller"},
+  {n:"Vitamina D3+K2",d:"Ossa & immunità",p:18.50,ic:"☀️",bg:"#fff6e0",tag:""},
+  {n:"Magnesio + B6",d:"Crampi & sonno",p:15.90,ic:"🌙",bg:"var(--violet-s)",tag:""},
+  {n:"Ferro + Vit C",d:"Fase mestruale",p:16.90,ic:"🩸",bg:"var(--coral-s)",tag:"Per te"},
+  {n:"Collagene Beauty",d:"Pelle, capelli, unghie",p:29.90,ic:"✨",bg:"var(--coral-s)",tag:"Estetica"},
+  {n:"Proteine Whey",d:"Recupero muscolare",p:34.90,ic:"💪",bg:"var(--mint)",tag:""},
+  {n:"Probiotici",d:"Equilibrio intestinale",p:22.00,ic:"🦠",bg:"var(--mint)",tag:""},
+  {n:"Inositolo",d:"Equilibrio ormonale · PCOS",p:26.50,ic:"🌸",bg:"var(--coral-s)",tag:"Per te"}
+];
+function shopHTML(){
+  return `
+  <div class="topbar"><div class="hello"><div class="k">Consigliati dalla tua AI</div><div class="n">Shop integratori</div></div>
+    <button class="avatar" style="border:none;position:relative" onclick="openCart()">🛒<span class="cartbadge" id="shopcart" style="display:none"></span></button></div>
+
+  <div class="banner gv"><span class="b-ic">💊</span><h4>Kit personalizzato</h4><p>In base al tuo piano e alla fase del ciclo: Ferro, Inositolo e Omega-3. Sconto bundle -20%.</p></div>
+
+  <div class="chips" style="margin-bottom:16px;overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px">
+    ${["Per te","Estetica","Ormonale","Energia","Sonno","Sport"].map((c,i)=>`<button class="chip ${i===0?'sel':''}" style="white-space:nowrap" onclick="segSelect(this)">${c}</button>`).join('')}
+  </div>
+
+  <div class="grid2" id="prod-grid">
+    ${PRODUCTS.map((p,i)=>`
+      <div class="prod">
+        ${p.tag?`<span class="tagbadge">${p.tag}</span>`:''}
+        <div class="pimg" style="background:${p.bg}">${p.ic}</div>
+        <b>${p.n}</b><div class="pd">${p.d}</div>
+        <div class="prow"><span class="price">€${p.p.toFixed(2)}</span><button class="add" onclick="addCart(${i})">＋</button></div>
+      </div>`).join('')}
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="h">🔁 Abbonamento mensile</div>
+    <div class="sub">Ricevi i tuoi integratori ogni mese con -15% e promemoria di assunzione automatici. Salta o annulla quando vuoi.</div>
+    <button class="btn violet sm" style="margin-top:12px" onclick="toast('Abbonamento attivato · consegna ogni 30 giorni')">Attiva abbonamento</button>
+  </div>`;
+}
+function addCart(i){const p=PRODUCTS[i];const e=S.cart.find(x=>x.n===p.n);if(e)e.q++;else S.cart.push({n:p.n,p:p.p,q:1});renderCartBadge();const b=document.getElementById('shopcart');if(b){const c=cartCount();b.style.display=c?'flex':'none';b.textContent=c;}toast(p.n+' aggiunto al carrello');}
+function openCart(){
+  if(!S.cart.length){toast('Il carrello è vuoto');return;}
+  const tot=S.cart.reduce((a,b)=>a+b.p*b.q,0);
+  go('carrello');
+  document.getElementById('sc-carrello').innerHTML=`
+    <button class="back" onclick="go('shop')">← Continua lo shopping</button>
+    <div class="topbar" style="padding-top:0"><div class="hello"><div class="k">${cartCount()} articoli</div><div class="n">Il tuo carrello</div></div></div>
+    <div class="card">
+      ${S.cart.map((it,i)=>`<div class="row"><div class="ri" style="background:var(--mint)">💊</div><div class="rt"><b>${it.n}</b><small>Quantità: ${it.q}</small></div><div class="rv">€${(it.p*it.q).toFixed(2)}</div></div>`).join('')}
+      <div class="divider"></div>
+      <div class="row"><div class="rt"><b>Totale</b><small>spedizione gratuita</small></div><div class="rv" style="color:var(--green-d);font-size:18px">€${tot.toFixed(2)}</div></div>
+    </div>
+    <button class="btn" onclick="S.cart=[];renderCartBadge();toast('Ordine confermato ✓ · in arrivo in 48h');go('shop')">Procedi al pagamento</button>`;
+}
+
+/* ---------- COACH AI ---------- */
+function coachHTML(){
+  return `
+  <button class="back" onclick="go('home')">← Indietro</button>
+  <div class="topbar" style="padding-top:0"><div class="hello"><div class="k">Sempre disponibile</div><div class="n">🤖 Coach AI</div></div></div>
+
+  <div class="chips" style="margin-bottom:14px">
+    ${["Cosa mangio a cena?","Sono stanca, perché?","Integratore per la pelle","Allenamento di oggi"].map(q=>`<button class="chip" onclick="ask('${q}')">${q}</button>`).join('')}
+  </div>
+
+  <div class="chat" id="chat">
+    <div class="msg ai">Ciao Sara! Sono il tuo coach. Ho visto che sei in fase follicolare e ti mancano 610 kcal oggi. Come posso aiutarti? 🌱</div>
+  </div>
+
+  <div class="chatbar">
+    <input id="chat-in" placeholder="Scrivi al coach…" onkeydown="if(event.key==='Enter')send()">
+    <button onclick="send()">➤</button>
+  </div>`;
+}
+const ANSWERS={
+  "Cosa mangio a cena?":"Con 610 kcal rimaste ti consiglio <b>merluzzo al forno con verdure e patate dolci</b> (≈ 430 kcal). Ricco di proteine e ferro, perfetto per la tua fase. Vuoi che lo aggiunga al diario?",
+  "Sono stanca, perché?":"Potrebbe dipendere da: sonno di 7,2h (ok) ma <b>ferro basso</b> tipico dopo il ciclo e idratazione sotto obiettivo (5/8). Ti suggerisco Ferro+Vit C e 3 bicchieri d'acqua. 💧",
+  "Integratore per la pelle":"Per pelle e capelli il <b>Collagene Beauty</b> + Omega-3 danno ottimi risultati in 6-8 settimane. Vuoi vederli nello shop?",
+  "Allenamento di oggi":"Sei in fase di energia alta 💪 Ti propongo <b>forza gambe 40 min</b>. Lo trovi nella sezione Workout, l'ho già preparato."
+};
+function ask(q){document.getElementById('chat-in').value=q;send();}
+function send(){
+  const inp=document.getElementById('chat-in');const q=inp.value.trim();if(!q)return;
+  const c=document.getElementById('chat');
+  c.innerHTML+=`<div class="msg me">${q}</div>`;inp.value='';
+  c.scrollTop=c.scrollHeight;
+  setTimeout(()=>{
+    const a=ANSWERS[q]||"Ottima domanda! In base ai tuoi dati (obiettivo "+S.user.goal+", fase follicolare) ti preparo un consiglio su misura. Posso aggiornare il tuo piano o prenotarti un professionista se preferisci un parere medico.";
+    c.innerHTML+=`<div class="msg ai">${a}</div>`;c.scrollTop=c.scrollHeight;
+    document.getElementById('viewport').scrollTop=document.getElementById('viewport').scrollHeight;
+  },550);
+}
+
+/* ---------- ALLENAMENTO ---------- */
+const WORKOUTS=[
+  {n:"Forza gambe",d:"40 min · Intermedio",ic:"🦵",k:320,bg:"#fff0e0"},
+  {n:"HIIT brucia grassi",d:"25 min · Avanzato",ic:"🔥",k:280,bg:"var(--coral-s)"},
+  {n:"Yoga & mobilità",d:"30 min · Tutti",ic:"🧘",k:120,bg:"var(--violet-s)"},
+  {n:"Full body a casa",d:"35 min · Base",ic:"🏠",k:250,bg:"var(--mint)"},
+  {n:"Cardio camminata",d:"45 min · Base",ic:"🚶",k:210,bg:"#e8f1ff"}
+];
+function allenamentoHTML(){
+  return `
+  <button class="back" onclick="go('home')">← Indietro</button>
+  <div class="topbar" style="padding-top:0"><div class="hello"><div class="k">Adattato alla tua fase · energia alta</div><div class="n">Allenamento</div></div></div>
+
+  <div class="grid3" style="margin-bottom:16px">
+    <div class="stat"><div class="ico" style="background:#fff0e0;color:var(--amber)">🔥</div><div class="v">320</div><div class="l">kcal target</div></div>
+    <div class="stat"><div class="ico" style="background:var(--mint);color:var(--green-d)">✅</div><div class="v">3/5</div><div class="l">settimana</div></div>
+    <div class="stat"><div class="ico" style="background:var(--violet-s);color:var(--violet)">⏱️</div><div class="v">4.2h</div><div class="l">totali</div></div>
+  </div>
+
+  <div class="banner gg"><span class="b-ic">🏋️</span><h4>Consigliato oggi · Forza gambe</h4><p>In fase follicolare il corpo tollera meglio i carichi. 40 minuti, 6 esercizi.</p></div>
+
+  <div class="section-title" style="margin-top:0">Libreria allenamenti</div>
+  ${WORKOUTS.map(w=>`
+    <div class="pro">
+      <div class="ph" style="background:${w.bg}">${w.ic}</div>
+      <div class="pi"><b>${w.n}</b><small>${w.d} · ~${w.k} kcal</small></div>
+      <button class="btn sm" style="width:auto;padding:10px 14px;align-self:center" onclick="toast('Avvio: ${w.n} ▶')">▶</button>
+    </div>`).join('')}
+  `;
+}
+
+/* ---------- PROMEMORIA ---------- */
+function promemoriaHTML(){
+  return `
+  <button class="back" onclick="go('home')">← Indietro</button>
+  <div class="topbar" style="padding-top:0"><div class="hello"><div class="k">Tutto in un posto</div><div class="n">⏰ Promemoria</div></div></div>
+
+  <div class="alert info"><span>🔔</span><div>Ti avviso per integratori, acqua, pasti, allenamenti e appuntamenti medici/estetici. Sincronizzati col tuo calendario.</div></div>
+
+  <div class="card" id="rem-list"></div>
+
+  <button class="btn ghost" onclick="addReminder()">＋ Nuovo promemoria</button>
+  `;
+}
+function renderReminders(){
+  const c=document.getElementById('rem-list'); if(!c)return;
+  c.innerHTML=S.reminders.map((r,i)=>`
+    <div class="tog">
+      <div class="ri" style="width:42px;height:42px;flex:0 0 42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px;background:var(--mint)">${r.ic}</div>
+      <div class="tt"><b>${r.t}</b><small>${r.d}</small></div>
+      <div class="switch ${r.on?'on':''}" onclick="toggleRem(${i},this)"><i></i></div>
+    </div>`).join('');
+}
+function toggleRem(i,el){S.reminders[i].on=!S.reminders[i].on;el.classList.toggle('on');toast(S.reminders[i].on?'Promemoria attivo':'Promemoria disattivato');}
+function addReminder(){S.reminders.push({t:"Nuovo promemoria",d:"Oggi · 20:00",on:true,ic:"⭐",c:"var(--green)"});rebuild('promemoria');go('promemoria');toast('Promemoria aggiunto');}
+
+/* ---------- PROFILO ---------- */
+function profiloHTML(){
+  return `
+  <div class="topbar"><div class="hello"><div class="k">Il tuo account</div><div class="n">Profilo</div></div></div>
+
+  <div class="card" style="text-align:center">
+    <div class="avatar" style="width:80px;height:80px;border-radius:26px;font-size:32px;margin:0 auto 12px">${S.user.initials}</div>
+    <div style="font-size:20px;font-weight:800">${S.user.name} Rossi</div>
+    <div class="sub">Obiettivo: ${S.user.goal} · ${S.weight} kg</div>
+    <div class="grid3" style="margin-top:16px">
+      <div><div style="font-size:20px;font-weight:800">28</div><div class="l" style="font-size:11px;color:var(--muted)">Giorni attiva</div></div>
+      <div><div style="font-size:20px;font-weight:800">-2.1</div><div class="l" style="font-size:11px;color:var(--muted)">kg mese</div></div>
+      <div><div style="font-size:20px;font-weight:800">86%</div><div class="l" style="font-size:11px;color:var(--muted)">Aderenza</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="h">🎯 Obiettivo</div>
+    <div class="seg" id="goal-seg">${["Dimagrimento","Mantenimento","Massa","Benessere"].map((g,i)=>`<button class="${g===S.user.goal?'on':''}" onclick="segPick('goal-seg',this);S.user.goal=this.textContent;toast('Obiettivo: '+this.textContent)">${g}</button>`).join('')}</div>
+  </div>
+
+  <div class="card tight">
+    <div class="tog"><div class="ri" style="width:42px;height:42px;flex:0 0 42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px;background:var(--coral-s)">🌸</div><div class="tt"><b>Monitoraggio ciclo</b><small>Salute femminile & ormonale</small></div><div class="switch on" onclick="this.classList.toggle('on')"><i></i></div></div>
+    <div class="tog"><div class="ri" style="width:42px;height:42px;flex:0 0 42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px;background:#e8f1ff">⌚</div><div class="tt"><b>Sincronizza wearable</b><small>Apple Health · Google Fit</small></div><div class="switch on" onclick="this.classList.toggle('on')"><i></i></div></div>
+    <div class="tog"><div class="ri" style="width:42px;height:42px;flex:0 0 42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px;background:var(--mint)">🔔</div><div class="tt"><b>Notifiche</b><small>Promemoria & consigli</small></div><div class="switch on" onclick="this.classList.toggle('on')"><i></i></div></div>
+  </div>
+
+  <div class="card tight">
+    <div class="row" onclick="go('prenota')" style="cursor:pointer"><div class="ri" style="background:var(--mint)">🩺</div><div class="rt"><b>Le mie visite</b></div><div class="rv">›</div></div>
+    <div class="row" onclick="openCart()" style="cursor:pointer"><div class="ri" style="background:var(--mint)">📦</div><div class="rt"><b>I miei ordini</b></div><div class="rv">›</div></div>
+    <div class="row" onclick="go('promemoria')" style="cursor:pointer"><div class="ri" style="background:var(--mint)">⏰</div><div class="rt"><b>Promemoria</b></div><div class="rv">›</div></div>
+    <div class="row" onclick="toast('Report PDF generato')" style="cursor:pointer"><div class="ri" style="background:var(--mint)">📄</div><div class="rt"><b>Esporta report salute</b></div><div class="rv">›</div></div>
+  </div>
+
+  <div class="card">
+    <div class="h">🤖 Riconoscimento AI dei cibi ${S.aiKey?'<span class="pill">Attivo</span>':'<span class="pill" style="background:var(--line);color:var(--muted)">Demo</span>'}</div>
+    <div class="sub" style="margin-bottom:12px">Con una chiave API Claude, lo scanner pasti e il frigo riconoscono i cibi reali dalle tue foto. Senza chiave restano in modalità demo.</div>
+    <div class="field"><label>Chiave API (Anthropic)</label><input id="ai-key" type="password" placeholder="sk-ant-..." value="${S.aiKey||''}"></div>
+    <div class="field"><label>Modello (opzionale)</label><input id="ai-model" placeholder="claude-3-5-sonnet-latest" value="${S.aiModel||''}"></div>
+    <button class="btn sm" onclick="saveAiKey()">${S.aiKey?'Aggiorna':'Attiva riconoscimento AI'}</button>
+    <div class="tiny" style="text-align:left;margin-top:10px">🔒 La chiave resta solo su questo dispositivo. La ottieni su console.anthropic.com. Nota: l'uso dell'API ha un costo a consumo sul tuo account.</div>
+  </div>
+
+  <div class="card tight">
+    <div class="tog"><div class="ri" style="width:42px;height:42px;flex:0 0 42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px;background:var(--mint)">💾</div><div class="tt"><b>Salvataggio automatico</b><small>Peso, umore, carrello e diario restano salvati su questo dispositivo</small></div><div class="switch on"><i></i></div></div>
+    <div class="row" onclick="if(confirm('Azzerare tutti i dati salvati?'))resetData()" style="cursor:pointer"><div class="ri" style="background:var(--coral-s)">🗑️</div><div class="rt"><b style="color:#d63a5c">Azzera dati e ricomincia</b></div><div class="rv">›</div></div>
+  </div>
+
+  <button class="btn sec" onclick="toast('A presto, Sara!')">Esci</button>
+  <div class="tiny">Auréa · v1.0 · Il benessere che si prende cura di te</div>
+  `;
+}
+
+/* ---------- SUPPLEMENT RECO ENGINE (collegato ai dati) ---------- */
+function addCartByName(n){const p=PRODUCTS.find(x=>x.n===n);if(!p)return;const e=S.cart.find(x=>x.n===n);if(e)e.q++;else S.cart.push({n:p.n,p:p.p,q:1});renderCartBadge();const b=document.getElementById('shopcart');if(b){const c=cartCount();b.style.display=c?'flex':'none';b.textContent=c;}toast(n+' aggiunto al carrello');}
+function recommend(context){
+  // context: 'home' | 'ciclo' | 'mood' | 'peso'
+  const wp=weightPlan();
+  let items=[];
+  if(context==='ciclo'){
+    items=[
+      {n:"Ferro + Vit C",why:"Fase post-mestruale: ripristina le riserve di ferro e riduce la stanchezza"},
+      {n:"Magnesio + B6",why:"Attenua crampi e tensione tipici della fase luteale"},
+      {n:"Inositolo",why:"Supporta l'equilibrio ormonale (utile con cicli irregolari)"}
+    ];
+  } else if(context==='mood'){
+    items=[
+      {n:"Magnesio + B6",why:"Aiuta a gestire stress e tensione, favorisce il rilassamento"},
+      {n:"Omega-3 Ultra",why:"Supporta l'umore e la funzione cerebrale"},
+      {n:"Vitamina D3+K2",why:"Livelli bassi si associano a stanchezza e umore instabile"}
+    ];
+  } else if(context==='peso'){
+    items=[
+      {n:"Proteine Whey",why:"Aumenta sazietà e preserva la massa muscolare durante il deficit"},
+      {n:"Probiotici",why:"Sostiene digestione e metabolismo nel percorso di dimagrimento"},
+      {n:"Omega-3 Ultra",why:"Sostiene metabolismo e pelle mentre perdi peso"}
+    ];
+  } else { // home: mix collegato al quadro attuale
+    items=[
+      {n:"Ferro + Vit C",why:"Energia bassa (5/8 acqua, ciclo recente): combatte la stanchezza"},
+      {n:"Collagene Beauty",why:"Per il tuo obiettivo estetica: pelle, capelli e unghie"},
+      {n:"Proteine Whey",why:"Aiuta a raggiungere "+S.wGoal+" kg mantenendo i muscoli"}
+    ];
+  }
+  return items;
+}
+function suppRecoCard(title,subtitle,context){
+  const items=recommend(context);
+  return `<div class="card">
+    <div class="h">💊 ${title}<span class="pill">AI · per te</span></div>
+    <div class="sub" style="margin-bottom:10px">${subtitle}</div>
+    ${items.map(it=>{const p=PRODUCTS.find(x=>x.n===it.n)||{p:0,ic:'💊',bg:'var(--mint)'};return `
+      <div class="row">
+        <div class="ri" style="background:${p.bg}">${p.ic}</div>
+        <div class="rt"><b>${it.n}</b><small>${it.why}</small></div>
+        <div class="rv" style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
+          <span class="price" style="font-size:13px">€${p.p.toFixed(2)}</span>
+          <button class="add" style="width:30px;height:30px;font-size:18px" onclick="addCartByName('${it.n}')">＋</button>
+        </div>
+      </div>`}).join('')}
+    <button class="btn ghost sm" style="margin-top:10px" onclick="go('shop')">Apri lo shop integratori →</button>
+  </div>`;
+}
+function chosenMeal(mi){const oi=S.planChoices[mi]||0;return PLAN[mi]?PLAN[mi].opts[oi].t:'';}
+
+/* ---------- PLANNING ---------- */
+const WEEK=[
+  {d:"Lun 21",items:[{ic:"🦵",t:"Forza gambe",c:"var(--violet-s)"},{ic:"🧠",t:"Psicologa 17:00",c:"#e8f1ff"}]},
+  {d:"Mar 22",items:[{ic:"🥗",t:"Nutrizionista 10:00",c:"var(--mint)"},{ic:"🔥",t:"HIIT 25'",c:"var(--coral-s)"}]},
+  {d:"Mer 23",items:[{ic:"🧘",t:"Yoga & mobilità",c:"var(--violet-s)"},{ic:"🧴",t:"Dermatologo",c:"#fff6e0"}]},
+  {d:"Gio 24",items:[{ic:"✨",t:"Medico estetico 15:30",c:"var(--coral-s)"},{ic:"🚶",t:"Camminata 45'",c:"#e8f1ff"}]},
+  {d:"Ven 25",items:[{ic:"🏠",t:"Full body a casa",c:"var(--mint)"},{ic:"🛒",t:"Spesa settimanale",c:"var(--mint)"}]},
+  {d:"Sab 26",items:[{ic:"🧘",t:"Riposo attivo",c:"var(--violet-s)"},{ic:"🌸",t:"Self-care day",c:"var(--coral-s)"}]},
+  {d:"Dom 27",items:[{ic:"📝",t:"Review settimana",c:"#e8f1ff"},{ic:"🍲",t:"Meal prep",c:"var(--mint)"}]}
+];
+const PLAN_EV={
+  19:["⚖️ Pesata mattutina","🏋️ Forza gambe · 18:00","💚 Diario emotivo · 22:00"],
+  21:["🦵 Forza gambe","🧠 Psicologa · 17:00"],
+  22:["🥗 Nutrizionista · 10:00","🔥 HIIT 25'"],
+  23:["🧘 Yoga & mobilità","🧴 Dermatologo estetico"],
+  24:["✨ Medico estetico · 15:30","🚶 Camminata 45'"],
+  25:["🏠 Full body a casa","🛒 Spesa settimanale"],
+  26:["🌸 Self-care day","🧘 Riposo attivo"],
+  27:["📝 Review settimana","🍲 Meal prep"],
+  29:["🩸 Inizio ciclo previsto"]
+};
+S.calSel=19;
+function planningHTML(){
+  return `
+  <div class="topbar"><div class="hello"><div class="k">Tutto collegato in un posto</div><div class="n">📆 Planning</div></div><div class="avatar" onclick="go('profilo')">${S.user.initials}</div></div>
+
+  <div class="seg" id="plan-tab" style="margin-bottom:16px">
+    <button class="on" onclick="planTab('cal',this)">Calendario</button>
+    <button onclick="planTab('day',this)">Giorno</button>
+    <button onclick="planTab('week',this)">Settimana</button>
+  </div>
+
+  <div id="plan-body"></div>
+  `;
+}
+function planTab(t,btn){document.querySelectorAll('#plan-tab button').forEach(b=>b.classList.remove('on'));if(btn)btn.classList.add('on');renderPlanBody(t);}
+function calDayInfo(d){
+  let cls='',cycle='';
+  if(d>=1&&d<=5){cls='period';cycle='Mestruazioni';}
+  else if(d>=8&&d<=12){cls='fertile';cycle='Finestra fertile';}
+  else if(d===13){cls='ovul';cycle='Ovulazione';}
+  else if(d>=29&&d<=33){cls='pred';cycle='Ciclo previsto';}
+  return {cls,cycle};
+}
+function renderCalDetail(){
+  const d=S.calSel;const ev=PLAN_EV[d]||[];const ci=calDayInfo(d);
+  const el=document.getElementById('cal-detail');if(!el)return;
+  el.innerHTML=`
+    <div class="h">${d} luglio ${d===19?'· Oggi':''}${ci.cycle?` <span class="pill" style="background:var(--coral-s);color:#d63a5c">🌸 ${ci.cycle}</span>`:''}</div>
+    ${ev.length?ev.map(e=>`<div class="row" style="padding:10px 0"><div class="ri" style="background:var(--mint)">${e.split(' ')[0]}</div><div class="rt"><b>${e.substring(e.indexOf(' ')+1)}</b></div></div>`).join('')
+      :'<div class="sub">Nessun evento pianificato. Tocca + per aggiungere.</div>'}
+    <button class="btn ghost sm" style="margin-top:10px" onclick="toast('Evento aggiunto al ${d} luglio')">＋ Aggiungi evento</button>`;
+}
+function setCalDay(d){S.calSel=d;document.querySelectorAll('#plan-cal .d').forEach(x=>x.classList.remove('sel'));const c=document.getElementById('cd-'+d);if(c)c.classList.add('sel');renderCalDetail();}
+function renderPlanBody(t){
+  const b=document.getElementById('plan-body'); if(!b)return;
+  b.dataset.t=t;
+  if(t==='cal'){
+    const days=Array.from({length:31},(_,i)=>i+1);
+    b.innerHTML=`
+      <div class="card">
+        <div class="h">Luglio 2026 <span class="pill">◀ ▶</span></div>
+        <div class="cal" id="plan-cal">
+          ${["L","M","M","G","V","S","D"].map(x=>`<div class="dow">${x}</div>`).join('')}
+          ${days.map(d=>{const ci=calDayInfo(d);const hasEv=!!PLAN_EV[d];return `
+            <div class="d ${ci.cls} ${d===19?'today':''} ${d===S.calSel?'sel':''}" id="cd-${d}" onclick="setCalDay(${d})" style="${d===S.calSel?'outline:2px solid var(--green);':''}">
+              ${d}${hasEv?`<span style="position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--green)"></span>`:''}
+            </div>`}).join('')}
+        </div>
+        <div class="legend">
+          <span><i style="background:var(--coral)"></i>Ciclo</span>
+          <span><i style="background:var(--violet-s)"></i>Fertile</span>
+          <span><i style="background:var(--green)"></i>Evento/impegno</span>
+        </div>
+      </div>
+      <div class="card" id="cal-detail"></div>
+      <div class="alert ok"><span>🔗</span><div>Il calendario unisce automaticamente allenamenti, appuntamenti medici/estetici, ciclo e promemoria.</div></div>`;
+    renderCalDetail();
+    return;
+  }
+  if(t==='day'){
+    const done=S.today.filter(x=>x.done).length;
+    b.innerHTML=`
+      <div class="card">
+        <div class="h">Oggi · Domenica 19 <span class="pill">${done}/${S.today.length} fatti</span></div>
+        <div class="bar" style="height:9px;margin-bottom:8px"><i style="width:${done/S.today.length*100}%;background:var(--green)"></i></div>
+        ${S.today.map((x,i)=>`
+          <div class="row" style="opacity:${x.done?.55:1}">
+            <div class="rv" style="font-size:12px;color:var(--muted);width:44px;text-align:left;font-weight:700">${x.time}</div>
+            <div class="ri" style="background:var(--mint)">${x.ic}</div>
+            <div class="rt" ${x.link?`onclick="go('${x.link}')" style="cursor:pointer"`:''}><b style="${x.done?'text-decoration:line-through':''}">${x.t}${x.meal!=null?' · '+chosenMeal(x.meal):''}</b>${x.link?'<small>tocca per aprire</small>':''}</div>
+            <div class="switch ${x.done?'on':''}" style="width:40px;height:24px;flex:0 0 40px" onclick="toggleTask(${i},this)"><i style="width:18px;height:18px;${x.done?'left:19px':''}"></i></div>
+          </div>`).join('')}
+        <button class="btn ghost sm" style="margin-top:12px" onclick="toast('Attività aggiunta al giorno')">＋ Aggiungi attività</button>
+      </div>
+      <div class="alert ok"><span>🔗</span><div>Pasti, integratori, allenamento e appuntamenti sono presi automaticamente dalle altre sezioni.</div></div>
+      ${suppRecoCard('Supporto al tuo piano di oggi','In base a energia, obiettivo peso e idratazione:','peso')}`;
+  } else if(t==='week'){
+    b.innerHTML=`
+      <div class="card">
+        <div class="h">Settimana 21–27 luglio <span class="pill">4 workout</span></div>
+        ${WEEK.map(w=>`
+          <div class="row">
+            <div class="rv" style="width:52px;text-align:left;font-size:12px;font-weight:800;color:var(--ink)">${w.d}</div>
+            <div class="rt" style="display:flex;gap:6px;flex-wrap:wrap">
+              ${w.items.map(it=>`<span class="chip grey" style="background:${it.c};color:var(--ink);padding:6px 10px;font-size:11.5px">${it.ic} ${it.t}</span>`).join('')}
+            </div>
+          </div>`).join('')}
+      </div>
+      <div class="card">
+        <div class="h">🎯 Obiettivi della settimana</div>
+        <div class="tog"><div class="tt"><b>4 allenamenti</b><small>3 completati</small></div><div class="rv" style="color:var(--green-d)">75%</div></div>
+        <div class="tog"><div class="tt"><b>7/8 bicchieri d'acqua al giorno</b><small>media 6.2</small></div><div class="rv" style="color:var(--amber)">78%</div></div>
+        <div class="tog"><div class="tt"><b>Diario emotivo ogni sera</b><small>5 giorni su 7</small></div><div class="rv" style="color:var(--green-d)">71%</div></div>
+      </div>`;
+  } else {
+    b.innerHTML=`
+      <div class="card">
+        <div class="h">Luglio · a colpo d'occhio</div>
+        <div class="grid2">
+          <div class="stat"><div class="ico" style="background:var(--mint);color:var(--green-d)">⚖️</div><div class="v">-2.1 kg</div><div class="l">obiettivo -3 · 70%</div></div>
+          <div class="stat"><div class="ico" style="background:var(--coral-s);color:var(--coral)">🌸</div><div class="v">8 ago</div><div class="l">prossimo ciclo</div></div>
+          <div class="stat"><div class="ico" style="background:#e8f1ff;color:var(--blue)">🩺</div><div class="v">5</div><div class="l">appuntamenti</div></div>
+          <div class="stat"><div class="ico" style="background:var(--violet-s);color:var(--violet)">🔥</div><div class="v">18</div><div class="l">allenamenti</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="h">🗓️ Traguardi del mese</div>
+        <div class="tog"><div class="ri" style="width:40px;height:40px;flex:0 0 40px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:var(--mint)">⚖️</div><div class="tt"><b>Arrivare a 63 kg</b><small>verso l'obiettivo di 60 kg</small></div><div class="rv" style="color:var(--green-d)">70%</div></div>
+        <div class="tog"><div class="ri" style="width:40px;height:40px;flex:0 0 40px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:var(--coral-s)">✨</div><div class="tt"><b>Percorso viso · 4 sedute</b><small>medico estetico</small></div><div class="rv" style="color:var(--amber)">50%</div></div>
+        <div class="tog"><div class="ri" style="width:40px;height:40px;flex:0 0 40px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:#e8f1ff">🧠</div><div class="tt"><b>Benessere emotivo costante</b><small>diario 20+ giorni</small></div><div class="rv" style="color:var(--green-d)">65%</div></div>
+      </div>
+      <div class="card">
+        <div class="h">📈 Andamento peso</div>
+        <div style="display:flex;align-items:flex-end;gap:8px;height:110px;padding-top:8px">
+          ${[69,68.2,67.4,66.5,65.3,64.5,63.8].map((v,i)=>{const h=(v-62)/(69-62)*90+10;return `<div style="flex:1;text-align:center"><div style="background:linear-gradient(180deg,#4bd4a6,var(--green));height:${h}px;border-radius:8px 8px 0 0"></div><div style="font-size:9px;color:var(--muted);margin-top:4px">${v}</div></div>`}).join('')}
+        </div>
+        <div class="sub" style="text-align:center;margin-top:6px">Settimane · obiettivo 60 kg</div>
+      </div>`;
+  }
+}
+function toggleTask(i,el){S.today[i].done=!S.today[i].done;renderPlanBody('day');rebuild('home');toast(S.today[i].done?'Completato ✓':'Da fare');}
+
+/* ---------- BENESSERE EMOTIVO ---------- */
+const MOOD_EMO=[{v:5,e:"😄",l:"Ottima"},{v:4,e:"🙂",l:"Bene"},{v:3,e:"😐",l:"Così così"},{v:2,e:"😟",l:"Giù"},{v:1,e:"😢",l:"Male"}];
+const MOOD_COL={5:"#1fae7e",4:"#7ed957",3:"#f5a623",2:"#ff9a7a",1:"#ff6f8b",0:"#e7ede9"};
+function benessereHTML(){
+  return `
+  <div class="topbar"><div class="hello"><div class="k">Il tuo spazio · niente giudizi</div><div class="n">💚 Benessere emotivo</div></div><div class="avatar" onclick="go('profilo')">${S.user.initials}</div></div>
+
+  <div class="card">
+    <div class="h">Come ti senti oggi?</div>
+    <div style="display:flex;justify-content:space-between;gap:6px" id="mood-pick">
+      ${MOOD_EMO.map(m=>`<button onclick="pickMood(${m.v},this)" style="flex:1;border:1.5px solid var(--line);background:var(--card);border-radius:14px;padding:12px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px">
+        <span style="font-size:28px">${m.e}</span><span style="font-size:10px;font-weight:700;color:var(--muted)">${m.l}</span></button>`).join('')}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="h">Cosa stai provando?</div>
+    <div class="chips">
+      ${["Serena","Motivata","Grata","Stanca","Ansiosa","Stressata","Triste","Irritabile","Sopraffatta","Insicura","Fiera","Speranzosa"].map(t=>`<button class="chip violet" onclick="this.classList.toggle('sel')">${t}</button>`).join('')}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="h">📝 Scrivi liberamente</div>
+    <div class="sub" style="margin-bottom:8px">Pensieri, giornata, sfoghi, gratitudine… quello che vuoi.</div>
+    <textarea id="journal-in" rows="4" placeholder="Oggi mi sento…" style="width:100%;border:1px solid var(--line);border-radius:13px;padding:12px;font-size:14px;font-family:inherit;outline:none;resize:none"></textarea>
+    <button class="btn" style="margin-top:10px" onclick="saveJournal()">Salva nel diario</button>
+    <div id="journal-reply"></div>
+  </div>
+
+  <div class="card">
+    <div class="h">📊 Il tuo umore · 7 giorni</div>
+    <div style="display:flex;align-items:flex-end;gap:8px;height:90px" id="mood-chart">
+      ${S.moods.map(m=>`<div style="flex:1;text-align:center"><div style="height:${m.v?m.v*15:6}px;background:${MOOD_COL[m.v]};border-radius:7px 7px 0 0"></div><div style="font-size:10px;color:var(--muted);margin-top:5px">${m.d}</div></div>`).join('')}
+    </div>
+    <div class="sub" style="margin-top:8px">Media settimanale: buona · qualche calo a metà settimana (fase pre-mestruale).</div>
+  </div>
+
+  <div class="card">
+    <div class="h">🧘 Strumenti rapidi</div>
+    <div class="quick">
+      <button class="qa" onclick="breathe()"><span class="qi" style="background:#e8f1ff">🌬️</span>Respira</button>
+      <button class="qa" onclick="toast('Meditazione 5 min avviata 🎧')"><span class="qi" style="background:var(--violet-s)">🧘</span>Medita</button>
+      <button class="qa" onclick="toast('Bella! Scrivi 3 cose per cui sei grata ✨')"><span class="qi" style="background:var(--mint)">🙏</span>Gratitud.</button>
+      <button class="qa" onclick="go('coach')"><span class="qi" style="background:#fff0e0">🤖</span>Parla AI</button>
+    </div>
+    <div id="breath-box"></div>
+  </div>
+
+  <div class="card">
+    <div class="h">🧠 Supporto professionale</div>
+    <div class="sub" style="margin-bottom:12px">Se ne senti il bisogno, puoi parlare con un professionista. Psicologa e psiconutrizionista disponibili anche in video.</div>
+    <div class="pro" style="margin-bottom:0">
+      <div class="ph">🧠</div>
+      <div class="pi"><b>Dr.ssa Fontana</b><small>Psicologa · supporto emotivo</small><div style="margin-top:4px"><span class="rate">★ 5.0</span> <span class="sub" style="font-size:11px">· Lun 21 lug · €70</span></div></div>
+      <button class="btn sm" style="width:auto;padding:10px 12px;align-self:center" onclick="book('Dr.ssa Fontana','Psicologa','🧠','Lun 21 lug · 17:00')">Prenota</button>
+    </div>
+  </div>
+
+  ${suppRecoCard('Integratori che possono aiutarti','Per stress, umore ed energia mentale:','mood')}
+  `;
+}
+function pickMood(v,el){
+  document.querySelectorAll('#mood-pick button').forEach(b=>{b.style.borderColor='var(--line)';b.style.background='var(--card)';});
+  el.style.borderColor='var(--green)';el.style.background='var(--mint)';
+  S.moods[S.moods.length-1]={d:"Dom",v:v};
+  const mc=document.getElementById('mood-chart');
+  if(mc)mc.innerHTML=S.moods.map(m=>`<div style="flex:1;text-align:center"><div style="height:${m.v?m.v*15:6}px;background:${MOOD_COL[m.v]};border-radius:7px 7px 0 0"></div><div style="font-size:10px;color:var(--muted);margin-top:5px">${m.d}</div></div>`).join('');
+  rebuild('home');
+  toast('Umore registrato 💚');
+}
+function saveJournal(){
+  const ta=document.getElementById('journal-in');const txt=(ta.value||'').trim();
+  const tags=[...document.querySelectorAll('.card .chip.violet.sel')].map(c=>c.textContent);
+  const neg=tags.some(t=>["Ansiosa","Stressata","Triste","Irritabile","Sopraffatta","Insicura"].includes(t));
+  const cur=S.moods[S.moods.length-1].v;
+  const low = neg || (cur && cur<=2);
+  let reply;
+  if(low){
+    reply=`<div class="alert warn" style="margin:14px 0 0"><span>💚</span><div>Grazie per averlo scritto. Sentirsi così è legittimo e capita a tutti. Prova la respirazione 4-7-8 qui sotto, e ricorda che una chiacchierata con la Dr.ssa Fontana è a un tocco di distanza se ti va. Ti ho anche segnato Magnesio e Omega-3, che possono dare una mano nei periodi più carichi.</div></div>
+    <button class="btn pink sm" style="margin-top:10px" onclick="book('Dr.ssa Fontana','Psicologa','🧠','Lun 21 lug · 17:00')">Prenota la psicologa</button>`;
+  } else {
+    reply=`<div class="alert ok" style="margin:14px 0 0"><span>🌱</span><div>Registrato. Bello leggere questa energia — continua così. Ho aggiornato il tuo andamento dell'umore.</div></div>`;
+  }
+  S.journal.unshift({d:"Oggi",mood:MOOD_EMO.find(m=>m.v===cur)?.e||"🙂",txt:txt||"(voce senza testo)"});
+  document.getElementById('journal-reply').innerHTML=reply;
+  ta.value='';
+  toast('Diario salvato 💚');
+}
+function breathe(){
+  const box=document.getElementById('breath-box');
+  box.innerHTML=`<div style="text-align:center;padding:18px 0 4px">
+    <div id="breath-ball" style="width:90px;height:90px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#7ed9c0,var(--green));margin:0 auto;transition:transform 4s ease, opacity 4s ease;box-shadow:0 10px 30px rgba(31,174,126,.4)"></div>
+    <div id="breath-txt" style="margin-top:14px;font-weight:800;font-size:15px">Inspira…</div></div>`;
+  const ball=document.getElementById('breath-ball');const t=document.getElementById('breath-txt');
+  let step=0;const seq=[["Inspira…",1.6,4000],["Trattieni…",1.6,3000],["Espira…",0.7,4000]];
+  function run(){const[label,scale,ms]=seq[step%3];t.textContent=label;ball.style.transform='scale('+scale+')';step++;box._t=setTimeout(run,ms);}
+  clearTimeout(box._t);run();
+  setTimeout(()=>{clearTimeout(box._t);if(document.getElementById('breath-txt'))t.textContent='Bravo. Come ti senti ora? 💚';},13000);
+}
+
+/* ---------- COMMUNITY ---------- */
+const POSTS=[
+  {u:"Dr.ssa Bianchi",av:"B",c:"#1fae7e",t:"1h",tag:"Esperto",pro:true,txt:"Promemoria dolce 💚 In fase luteale è normale avere più fame: aumentate proteine e fibre invece di colpevolizzarvi. Il corpo lavora per voi.",likes:88,cm:20,liked:false},
+  {u:"Giulia M.",av:"G",c:"#f5a623",t:"2h",tag:"Ricetta",txt:"Ho rifatto i pancake proteici del piano con cannella e frutti di bosco 🥞 Colazione da 360 kcal, buonissima. Ve li consiglio!",likes:34,cm:9,liked:false},
+  {u:"Marco T.",av:"M",c:"#3b9dff",t:"4h",tag:"Consiglio",txt:"Trucco per il deficit: un bicchiere d'acqua prima di ogni pasto. Mi ha aiutato tantissimo a gestire la fame nervosa.",likes:51,cm:14,liked:false},
+  {u:"Sara R.",av:"S",c:"#7c5cff",t:"1g",tag:"Motivazione",txt:"Piccola vittoria: -2 kg questo mese e più energia di prima 🎉 Grazie a chi mi ha dato dritte qui dentro!",likes:63,cm:18,liked:false}
+];
+const CRECIPES=[
+  {u:"Elena F.",n:"Bowl proteica quinoa & ceci",k:480,d:"P 26 · C 54 · G 14",ing:"quinoa, ceci, avocado, pomodorini, limone",ic:"🥗",bg:"var(--mint)"},
+  {u:"Luca P.",n:"Salmone teriyaki light",k:520,d:"P 40 · C 44 · G 18",ing:"salmone, soia, miele, broccoli, riso",ic:"🐟",bg:"#e8f1ff"},
+  {u:"Sofia G.",n:"Overnight oats al cacao",k:340,d:"P 18 · C 46 · G 9",ing:"avena, latte, cacao, banana, chia",ic:"🍫",bg:"#fff0e0"}
+];
+function communityHTML(){
+  return `
+  <div class="topbar"><div class="hello"><div class="k">2.4k membri · online ora 312</div><div class="n">👥 Community</div></div><div class="avatar" onclick="go('profilo')">${S.user.initials}</div></div>
+  <div class="seg" id="com-tab" style="margin-bottom:16px">
+    <button class="on" onclick="comTab('feed',this)">Feed</button>
+    <button onclick="comTab('ricette',this)">Ricette</button>
+    <button onclick="comTab('chat',this)">Chat</button>
+  </div>
+  <div id="com-body"></div>`;
+}
+function comTab(t,btn){document.querySelectorAll('#com-tab button').forEach(b=>b.classList.remove('on'));if(btn)btn.classList.add('on');renderComBody(t);}
+function renderComBody(t){
+  const b=document.getElementById('com-body'); if(!b)return; b.dataset.t=t;
+  if(t==='feed'){
+    b.innerHTML=`
+      <div class="card tight">
+        <div style="display:flex;gap:10px;align-items:center">
+          <div class="avatar" style="width:40px;height:40px;border-radius:13px;font-size:15px">${S.user.initials}</div>
+          <input id="post-in" placeholder="Condividi un consiglio, una ricetta…" style="flex:1;border:1px solid var(--line);border-radius:20px;padding:11px 14px;font-size:13px;outline:none">
+          <button class="add" style="width:38px;height:38px;border-radius:12px" onclick="sendPost()">➤</button>
+        </div>
+      </div>
+      <div id="feed-list">${POSTS.map((p,i)=>postCard(p,i)).join('')}</div>`;
+  } else if(t==='ricette'){
+    b.innerHTML=`
+      <div class="alert info"><span>🍳</span><div>Ricette condivise dalla community, tutte compatibili con piani nutrizionali. Salvale nel tuo piano o aggiungi gli ingredienti alla spesa.</div></div>
+      ${CRECIPES.map((r,i)=>`
+        <div class="card">
+          <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">
+            <div class="pimg" style="height:56px;width:56px;flex:0 0 56px;margin:0;background:${r.bg};border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px">${r.ic}</div>
+            <div style="flex:1"><b style="font-size:15px">${r.n}</b><div class="sub">di ${r.u} · ${r.k} kcal · ${r.d}</div></div>
+          </div>
+          <div class="sub" style="margin-bottom:10px">🧺 ${r.ing}</div>
+          <div class="grid2">
+            <button class="btn sm sec" onclick="toast('Ricetta salvata nel tuo piano ✓')">＋ Salva nel piano</button>
+            <button class="btn sm" onclick="toast('Ingredienti aggiunti alla lista della spesa')">🛒 Alla spesa</button>
+          </div>
+        </div>`).join('')}`;
+  } else {
+    b.innerHTML=`
+      <div class="alert ok"><span>💬</span><div><b>Gruppo "Percorso benessere"</b> · scambiatevi idee, ricette e supporto in tempo reale.</div></div>
+      <div class="chat" id="com-chat">${S.chat.map(m=>comMsg(m)).join('')}</div>
+      <div class="chatbar"><input id="com-in" placeholder="Scrivi al gruppo…" onkeydown="if(event.key==='Enter')sendChat()"><button onclick="sendChat()">➤</button></div>`;
+  }
+}
+function postCard(p,i){
+  return `<div class="card">
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px">
+      <div class="avatar" style="width:42px;height:42px;border-radius:13px;font-size:15px;background:${p.c}">${p.av}</div>
+      <div style="flex:1"><b style="font-size:14px">${p.u} ${p.pro?'✔️':''}</b><div class="sub">${p.t} fa · <span style="color:var(--green-d);font-weight:700">#${p.tag}</span></div></div>
+    </div>
+    <div style="font-size:14px;line-height:1.5;margin-bottom:12px">${p.txt}</div>
+    <div style="display:flex;gap:18px;color:var(--muted);font-size:13px;font-weight:700">
+      <span onclick="likePost(${i},this)" style="cursor:pointer;color:${p.liked?'var(--coral)':'var(--muted)'}">${p.liked?'❤️':'🤍'} ${p.likes}</span>
+      <span style="cursor:pointer">💬 ${p.cm}</span>
+      <span style="cursor:pointer;margin-left:auto" onclick="toast('Post condiviso')">↗ Condividi</span>
+    </div>
+  </div>`;
+}
+function likePost(i,el){const p=POSTS[i];p.liked=!p.liked;p.likes+=p.liked?1:-1;renderComBody('feed');}
+function sendPost(){const el=document.getElementById('post-in');const v=(el.value||'').trim();if(!v)return;POSTS.unshift({u:S.user.name+" R.",av:S.user.initials,c:"#1fae7e",t:"ora",tag:"Community",txt:v,likes:0,cm:0,liked:false});renderComBody('feed');toast('Pubblicato nella community 🎉');}
+function comMsg(m){return m.me?`<div class="msg me">${m.txt}</div>`:`<div class="msg ai"><b style="font-size:11px;color:var(--green-d)">${m.u}</b><br>${m.txt}</div>`;}
+const COM_REPLIES=["Ottima idea, grazie! 🙌","Anche io la faccio spesso, super!","Provo stasera e ti dico 😍","Concordo, funziona benissimo per me."];
+function sendChat(){
+  const el=document.getElementById('com-in');const v=(el.value||'').trim();if(!v)return;
+  S.chat.push({me:true,txt:v});el.value='';
+  const c=document.getElementById('com-chat');c.innerHTML=S.chat.map(m=>comMsg(m)).join('');
+  document.getElementById('viewport').scrollTop=document.getElementById('viewport').scrollHeight;
+  setTimeout(()=>{const names=["Giulia","Marco","Elena","Sofia"];S.chat.push({u:names[S.chat.length%4],me:false,txt:COM_REPLIES[S.chat.length%4]});const cc=document.getElementById('com-chat');if(cc){cc.innerHTML=S.chat.map(m=>comMsg(m)).join('');document.getElementById('viewport').scrollTop=document.getElementById('viewport').scrollHeight;}},900);
+}
+
+/* ---------- FRIGO / LISTA SPESA ---------- */
+S.chat=[
+  {u:"Giulia",me:false,txt:"Ciao! Qualcuno ha un'idea per una cena veloce sotto le 500 kcal? 🍽️"},
+  {u:"Marco",me:false,txt:"Merluzzo al forno con verdure: 430 kcal e pronto in 20 min 🔥"},
+  {u:"Elena",me:false,txt:"Io stasera bowl di quinoa e ceci, ve la consiglio!"}
+];
+S.fridge=[];
+function frigoHTML(){
+  return `
+  <div class="topbar"><div class="hello"><div class="k">Collegato al tuo piano nutrizionale</div><div class="n">🧊 Il tuo frigo</div></div><div class="avatar" onclick="go('profilo')">${S.user.initials}</div></div>
+
+  <div class="card" style="text-align:center;background:linear-gradient(135deg,#10201a,#1c3830);color:#fff">
+    <div style="height:180px;border-radius:16px;border:2px dashed rgba(255,255,255,.3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px">
+      <div style="font-size:58px">🧊</div><div style="font-size:13px;opacity:.8">Apri e inquadra il frigo / la dispensa</div>
+    </div>
+    <button class="btn" style="margin-top:16px" onclick="capturePhoto(scanFridge,'Inquadra il frigo e scatta')">📸 Apri fotocamera</button>
+    <button class="btn sec sm" style="margin-top:10px;background:transparent;color:#fff;border-color:rgba(255,255,255,.3)" onclick="fileFallback(scanFridge)">🖼️ Carica una foto</button>
+  </div>
+  <div class="alert info"><span>🤖</span><div>L'AI riconosce gli ingredienti, li confronta con il piano <b>${weightPlan().kcal} kcal</b>, esclude i cibi che non gradisci e crea spesa + ricette.</div></div>
+  <div id="frigo-res"></div>`;
+}
+const FRIGO_DEMO={
+  have:[{name:"Uova",emoji:"🥚"},{name:"Petto di pollo",emoji:"🍗"},{name:"Spinaci",emoji:"🥬"},{name:"Yogurt greco",emoji:"🥛"},{name:"Pomodori",emoji:"🍅"},{name:"Avocado",emoji:"🥑"},{name:"Riso",emoji:"🍚"},{name:"Formaggio magro",emoji:"🧀"}],
+  shopping:[{name:"Salmone",emoji:"🐟",why:"cena del piano"},{name:"Quinoa",emoji:"🌾",why:"pranzo bowl"},{name:"Mirtilli",emoji:"🫐",why:"colazione yogurt"},{name:"Avena",emoji:"🌾",why:"porridge"},{name:"Broccoli",emoji:"🥦",why:"contorno cena"},{name:"Mandorle",emoji:"🥜",why:"spuntino"}],
+  recipes:[{name:"Frittata di albumi e spinaci",emoji:"🍳",kcal:390,match:100,have:"uova · spinaci · formaggio",miss:""},{name:"Pollo, riso e pomodori",emoji:"🍗",kcal:520,match:100,have:"pollo · riso · pomodori",miss:""},{name:"Bowl yogurt, avocado e semi",emoji:"🥣",kcal:290,match:85,have:"yogurt · avocado",miss:"mirtilli"}]
+};
+async function scanFridge(img){
+  const r=document.getElementById('frigo-res');
+  const photo=img?`<img src="${img}" style="width:100%;border-radius:14px;margin-bottom:12px;max-height:200px;object-fit:cover">`:'';
+  r.innerHTML=`<div class="card" style="text-align:center">${photo}<div class="sub">${S.aiKey?'🤖 Claude sta leggendo il frigo…':'Riconoscimento (demo) in corso…'}</div></div>`;
+  if(S.aiKey && img){
+    try{
+      const wp=weightPlan();
+      const prompt=`Analizza questa foto di un frigorifero/dispensa. L'utente segue un piano da ${wp.kcal} kcal al giorno, obiettivo "${S.user.goal}", e NON gradisce questi cibi: ${S.disliked.join(', ')||'nessuno'}. Rispondi SOLO con JSON valido, nessun altro testo, in questo formato: {"have":[{"name":"Uova","emoji":"🥚"}],"shopping":[{"name":"Salmone","emoji":"🐟","why":"per una cena proteica"}],"recipes":[{"name":"Frittata","emoji":"🍳","kcal":390,"match":100,"have":"uova, spinaci","miss":""}]}. "have"=ingredienti visibili nella foto. "shopping"=cosa manca per completare pasti sani in linea col piano, escludendo i cibi non graditi. "recipes"=2-4 piatti sani fattibili ora con ciò che c'è nel frigo, match 0-100, "miss"=ingredienti mancanti (stringa vuota se hai tutto).`;
+      const j=await callVision(img,prompt);
+      renderFridge(r,photo,j,true); return;
+    }catch(e){ toast('AI non disponibile: '+e.message+' · uso demo'); }
+  }
+  setTimeout(()=>renderFridge(r,photo,FRIGO_DEMO,false),1000);
+}
+function renderFridge(r,photo,j,real){
+  const have=j.have||[], shopping=j.shopping||[], recipes=j.recipes||[];
+  r.innerHTML=`
+      <div class="card">
+        ${photo}
+        <div class="h">✅ Nel tuo frigo <span class="pill">${real?'AI reale · ':''}${have.length} rilevati</span></div>
+        <div class="chips">${have.map(h=>`<span class="chip">${h.emoji||'🍴'} ${h.name}</span>`).join('')||'<span class="sub">Nessun ingrediente riconosciuto.</span>'}</div>
+      </div>
+
+      <div class="card">
+        <div class="h">🛒 Lista della spesa <span class="pill">per il piano</span></div>
+        <div class="sub" style="margin-bottom:10px">Ti manca questo per completare i pasti (cibi non graditi già esclusi):</div>
+        <div id="shop-list">${shopping.map(m=>`
+          <div class="row" style="padding:10px 0">
+            <div class="switch" style="width:40px;height:24px;flex:0 0 40px" onclick="this.classList.toggle('on')"><i style="width:18px;height:18px"></i></div>
+            <div class="ri" style="background:var(--mint)">${m.emoji||'🛒'}</div>
+            <div class="rt"><b>${m.name}</b><small>${m.why||''}</small></div>
+          </div>`).join('')||'<div class="sub">Hai già tutto per il piano ✓</div>'}</div>
+        <div class="grid2" style="margin-top:12px">
+          <button class="btn sm sec" onclick="toast('Lista inviata sul telefono 📲')">📤 Invia lista</button>
+          <button class="btn sm" onclick="toast('Spesa ordinata · consegna oggi 🚚')">🛵 Ordina spesa</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="h">🍽️ Cucina ora col tuo frigo</div>
+        <div class="sub" style="margin-bottom:10px">Piatti in linea col piano fattibili con ciò che hai:</div>
+        ${recipes.map(rc=>`
+          <div class="opt ${rc.match>=100?'sel':''}" onclick="toast('Ricetta: ${(rc.name||'').replace(/'/g,'')}')">
+            <div class="ot"><b>${rc.emoji||'🍽️'} ${rc.name}</b><span class="kc">${rc.match||0}% match</span></div>
+            <div class="od">${rc.kcal||'?'} kcal · hai: ${rc.have||''}${rc.miss?` · manca: <b style="color:#d63a5c">${rc.miss}</b>`:' · <b style="color:var(--green-d)">tutto pronto ✓</b>'}</div>
+          </div>`).join('')||'<div class="sub">Nessuna ricetta suggerita.</div>'}
+        <button class="btn ghost sm" onclick="go('coach')">🤖 Chiedi altre idee al coach</button>
+      </div>`;
+}
+
+/* ============ BUILD ============ */
+const BUILDERS={
+  home:homeHTML, diario:diarioHTML, scanner:scannerHTML, piano:planHTML,
+  ciclo:cicloHTML, prenota:prenotaHTML, shop:shopHTML, coach:coachHTML,
+  allenamento:allenamentoHTML, promemoria:promemoriaHTML, profilo:profiloHTML,
+  planning:planningHTML, benessere:benessereHTML,
+  community:communityHTML, frigo:frigoHTML,
+  carrello:()=>''
+};
+function rebuild(id){const el=document.getElementById('sc-'+id);if(el&&BUILDERS[id])el.innerHTML=BUILDERS[id]();afterRender(id);}
+function afterRender(id){
+  if(id==='home'){renderHomeAppts();}
+  if(id==='piano'){renderDislike();}
+  if(id==='prenota'){renderMyAppts();renderDocs('Tutti');}
+  if(id==='shop'){renderCartBadge();const b=document.getElementById('shopcart');if(b){const c=cartCount();b.style.display=c?'flex':'none';b.textContent=c;}}
+  if(id==='promemoria'){renderReminders();}
+  if(id==='planning'){renderPlanBody('cal');}
+  if(id==='community'){renderComBody('feed');}
+}
+function boot(){
+  restore();
+  Object.keys(BUILDERS).forEach(id=>screen(id, BUILDERS[id]()));
+  renderNav();
+  Object.keys(BUILDERS).forEach(afterRender);
+  go('home');
+  save();
+  // clock
+  function tick(){const d=new Date();document.getElementById('clock').textContent=d.getHours()+':'+String(d.getMinutes()).padStart(2,'0');}
+  tick();setInterval(tick,30000);
+}
+boot();
+</script>
+</body>
+</html>
