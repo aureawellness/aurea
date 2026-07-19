@@ -320,6 +320,20 @@ body{
 .short .badge.viral{background:linear-gradient(90deg,#ff6f8b,#ff9a7a)}
 .short .badge.foryou{background:rgba(31,174,126,.92);top:52px;left:14px}
 .compose-btn{position:absolute;top:0;right:0;background:var(--green);color:#fff;border:none;border-radius:14px;padding:9px 14px;font-weight:800;font-size:13px;cursor:pointer}
+
+/* editor video */
+.editor{position:absolute;inset:0;z-index:126;background:#000;display:none;flex-direction:column;border-radius:40px;overflow:hidden}
+.editor.open{display:flex}
+.ed-stage{position:relative;flex:1;overflow:hidden;background:#000}
+.ed-stage video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.ed-ov{position:absolute;left:50%;transform:translateX(-50%);color:#fff;font-weight:800;text-shadow:0 2px 10px rgba(0,0,0,.8);text-align:center;padding:2px 10px;max-width:88%;cursor:pointer;line-height:1.2}
+.ed-top{position:absolute;top:calc(12px + env(safe-area-inset-top,0));left:0;right:0;display:flex;justify-content:space-between;padding:0 14px;z-index:4}
+.ed-tools{position:absolute;right:12px;top:calc(64px + env(safe-area-inset-top,0));display:flex;flex-direction:column;gap:12px;z-index:4}
+.ed-tools button{background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:14px;padding:9px 0;width:58px;font-size:11px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}
+.ed-tools button span{font-size:20px}
+.ed-tools button small{font-size:10px}
+.ed-bottom{background:#0d0d0d;padding:12px 14px calc(16px + env(safe-area-inset-bottom,0));display:flex;flex-direction:column;gap:10px}
+.ed-bottom input{border:1px solid #333;background:#1a1a1a;color:#fff;border-radius:12px;padding:11px 13px;font-size:14px;outline:none;font-family:inherit}
 </style>
 </head>
 <body>
@@ -381,6 +395,20 @@ body{
     </div>
   </div>
 
+  <div class="onb" id="authwall" style="display:none">
+    <div class="onb-inner">
+      <div class="onb-logo"><img src="data:image/jpeg;base64,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" alt="Auréa"></div>
+      <h2>Crea il tuo profilo</h2>
+      <div class="seg" id="auth-seg" style="margin:14px 0 18px">
+        <button class="on" onclick="authTab('login',this)">Accedi</button>
+        <button onclick="authTab('signup',this)">Registrati</button>
+      </div>
+      <div id="auth-forms"></div>
+    </div>
+  </div>
+
+  <div class="editor" id="editor"></div>
+
   <div class="sheet-ov" id="menu-sheet" onclick="if(event.target===this)closeMenu()">
     <div class="sheet">
       <div class="grab"></div>
@@ -401,7 +429,7 @@ const S = {
   foodLog:[],
   steps:0, stepsGoal:10000,
   water:0, waterGoal:8,
-  sleep:7.2,
+  sleep:null,
   weight:64.5,
   wStart:69.0, wNow:64.5, wGoal:60.0, wWeeks:12,
   disliked:[],
@@ -436,11 +464,17 @@ const S = {
   aiKey:"", aiModel:"claude-3-5-sonnet-latest",
   setup:false,
   diet:"Onnivora", mealOffset:{}, events:{},
+  kcalCustom:null, mealsCount:4,
   detox:null,
   fasting:null,
   following:[],
   pro:null,
   docReviews:{},
+  syncOn:true,
+  customProducts:[],
+  shopPage:0,
+  recovery:false,
+  stepsConnected:false,
   health:{interventi:"",diabete:"No",intolleranze:[],patologie:[],farmaci:"",gravidanza:false,note:""}
 };
 let onbData={sex:"F",goal:"Dimagrimento",diabete:"No"};
@@ -463,9 +497,13 @@ function weightPlan(){
   let kcal = maintenance - dailyDelta;
   kcal = Math.round(kcal/10)*10;
   if(kcal<1300) kcal=1300;                              // soglia sicurezza
+  const baseKcal = kcal;
+  const loLim = Math.max(1200, Math.round(baseKcal*0.75));
+  const hiLim = Math.round(baseKcal*1.25);
+  if(S.kcalCustom){ kcal = Math.min(hiLim, Math.max(loLim, S.kcalCustom)); }
   S.user.kcalGoal = kcal;
   const dir = toLose>0?'perdere':(toLose<0?'aumentare':'mantenere');
-  return {toLose,done,total,progress,weeklyKg:Math.abs(weeklyKg),kcal,dailyDelta,dir,maintenance,
+  return {toLose,done,total,progress,weeklyKg:Math.abs(weeklyKg),kcal,baseKcal,loLim,hiLim,dailyDelta,dir,maintenance,
           etaWeeks: weeklyKg!==0 ? Math.ceil(Math.abs(toLose)/Math.abs(weeklyKg)) : 0};
 }
 
@@ -498,7 +536,8 @@ function cartCount(){return S.cart.reduce((a,b)=>a+b.q,0);}
 /* ============ PERSISTENZA (salvataggio reale) ============ */
 let _cloudTimer=null;
 function save(){ try{ localStorage.setItem('aurea_data', JSON.stringify({S:S, POSTS:POSTS})); }catch(e){}
-  if(cloudOn()&&cloudUser){ clearTimeout(_cloudTimer); _cloudTimer=setTimeout(cloudSaveProfile,1500); } }
+  if(cloudOn()&&cloudUser&&S.syncOn!==false){ clearTimeout(_cloudTimer); _cloudTimer=setTimeout(cloudSaveProfile,1500); } }
+function toggleSync(el){ S.syncOn=!(S.syncOn!==false); el.classList.toggle('on',S.syncOn); try{localStorage.setItem('aurea_data',JSON.stringify({S:S,POSTS:POSTS}));}catch(e){} if(S.syncOn&&cloudOn()&&cloudUser)cloudSaveProfile(); toast(S.syncOn?'Sincronizzazione attiva':'Sincronizzazione in pausa'); }
 function restore(){ try{
   const r=localStorage.getItem('aurea_data'); if(!r) return false;
   const o=JSON.parse(r);
@@ -564,6 +603,39 @@ async function cloudFeed(){
   catch(e){ return []; }
 }
 async function cloudLikePost(id,cur){ if(!cloudOn())return; try{ await SB.from('posts').update({likes:(cur||0)+1}).eq('id',id); }catch(e){} }
+/* --- video editor: bozze e pubblicazioni permanenti --- */
+async function uploadBlob(blob,name){
+  const path=cloudUser.id+'/'+Date.now()+'_'+(name||'file').replace(/[^a-zA-Z0-9._-]/g,'_');
+  const {error}=await SB.storage.from('videos').upload(path,blob,{upsert:false,contentType:blob.type||'application/octet-stream'});
+  if(error) throw error;
+  return SB.storage.from('videos').getPublicUrl(path).data.publicUrl;
+}
+async function dataUrlToUrl(dataUrl,name){ const r=await fetch(dataUrl); const blob=await r.blob(); return uploadBlob(blob,name); }
+async function persistEdit(state,file){
+  let url=state.videoUrl||null;
+  if(file){ url=await uploadBlob(file,(file.name||'video.mp4')); }
+  else if(state.src && state.src.startsWith('data:')){ url=await dataUrlToUrl(state.src,'video.mp4'); }
+  else if(state.src && /^https?:/.test(state.src)){ url=state.src; }
+  let music=state.music;
+  if(music&&music.src&&music.src.startsWith('data:')){ music={src:await dataUrlToUrl(music.src,'music'),name:music.name}; }
+  let voice=state.voiceover;
+  if(voice&&voice.startsWith&&voice.startsWith('data:')){ voice=await dataUrlToUrl(voice,'voice.webm'); }
+  return {video_url:url, music, voiceover:voice};
+}
+async function cloudSaveDraft(state,file){
+  const p=await persistEdit(state,file);
+  const row={user_id:cloudUser.id, caption:state.caption||'', type:state.type||'Video', overlays:state.overlays||[], music:p.music||null, voiceover:p.voiceover||null, mute:!!state.muteOriginal, video_url:p.video_url};
+  if(state.cloudId){ await SB.from('drafts').update(row).eq('id',state.cloudId); return state.cloudId; }
+  const {data,error}=await SB.from('drafts').insert(row).select().single(); if(error)throw error; return data.id;
+}
+async function cloudLoadDrafts(){ if(!cloudOn()||!cloudUser)return []; try{ const {data,error}=await SB.from('drafts').select('*').order('created_at',{ascending:false}); if(error)throw error; return data||[]; }catch(e){ return []; } }
+async function cloudDeleteDraft(id){ try{ await SB.from('drafts').delete().eq('id',id); }catch(e){} }
+async function cloudPublishEdit(state,file){
+  const p=await persistEdit(state,file);
+  const {error}=await SB.from('posts').insert({user_id:cloudUser.id, author:(S.user.name||'utente'), caption:state.caption||'Il mio short', type:state.type||'Video', diet:S.diet, goal:S.user.goal, video_url:p.video_url, likes:0, overlays:state.overlays||[], music:p.music||null, voiceover:p.voiceover||null, mute:!!state.muteOriginal});
+  if(error)throw error;
+  if(state.cloudId){ await cloudDeleteDraft(state.cloudId); }
+}
 
 /* ============ ONBOARDING / PROFILO ============ */
 function onbSex(v,btn){onbData.sex=v;document.querySelectorAll('#onb-sex button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');const g=document.getElementById('onb-grav-wrap');if(g)g.style.display=v==='F'?'block':'none';}
@@ -627,12 +699,34 @@ function capturePhoto(cb,hint){
       .catch(()=>{ ov.remove(); fileFallback(cb); });
   } else { ov.remove(); fileFallback(cb); }
 }
-function fileFallback(cb){
+function fileFallback(cb,accept){
   const inp=document.createElement('input');
-  inp.type='file'; inp.accept='image/*'; inp.setAttribute('capture','environment');
-  inp.onchange=()=>{ const f=inp.files&&inp.files[0]; if(!f){return;} const rd=new FileReader(); rd.onload=()=>cb(rd.result); rd.readAsDataURL(f); };
+  inp.type='file'; inp.accept=accept||'image/*'; // niente "capture": apre la scelta file/galleria
+  inp.onchange=()=>{ const f=inp.files&&inp.files[0]; if(!f){return;} const rd=new FileReader(); rd.onload=()=>cb(rd.result,f); rd.readAsDataURL(f); };
   inp.click();
 }
+
+/* ============ CONTAPASSI reale (sensore movimento) ============ */
+async function connectSteps(){
+  if(typeof DeviceMotionEvent==='undefined'){ toast('Sensore movimento non disponibile su questo dispositivo/browser'); return; }
+  if(typeof DeviceMotionEvent.requestPermission==='function'){
+    try{ const r=await DeviceMotionEvent.requestPermission(); if(r!=='granted'){ toast('Permesso movimento negato'); return; } }
+    catch(e){ toast('Concedi il permesso al movimento per contare i passi'); return; }
+  }
+  S.stepsConnected=true; save(); startPedometer(); rebuild('home'); toast('Contapassi attivo 👟 · tieni il telefono con te');
+}
+function startPedometer(){
+  if(window._pedOn) return; window._pedOn=true;
+  let lastMag=0, lastStep=0;
+  window.addEventListener('devicemotion',function(e){
+    const a=e.accelerationIncludingGravity||e.acceleration; if(!a||a.x==null) return;
+    const mag=Math.sqrt(a.x*a.x+a.y*a.y+a.z*a.z);
+    const now=Date.now();
+    if((mag-lastMag)>1.15 && (now-lastStep)>300){ S.steps=(S.steps||0)+1; lastStep=now; updateStepsUI(); if(S.steps%15===0) save(); }
+    lastMag=mag;
+  });
+}
+function updateStepsUI(){ const el=document.getElementById('steps-val'); if(el) el.textContent=((S.steps||0)/1000).toFixed(1)+'k'; }
 
 /* ============ AI VISION reale (Claude) ============ */
 async function callVision(img,prompt){
@@ -688,7 +782,8 @@ const MENU=[
   {id:'diario',ic:'📔',l:'Diario'},
   {id:'scanner',ic:'📷',l:'Scanner'},
   {id:'frigo',ic:'🧊',l:'Frigo'},
-  {id:'shop',ic:'🛍️',l:'Shop'},
+  {id:'shop',ic:'🛍️',l:'Integratori'},
+  {id:'carrello',ic:'🛒',l:'Carrello'},
   {id:'prenota',ic:'🩺',l:'Prenota'},
   {id:'coach',ic:'🤖',l:'Coach AI'},
   {id:'allenamento',ic:'🏋️',l:'Workout'},
@@ -704,7 +799,7 @@ function renderMenu(){
 }
 function openMenu(){renderMenu();document.getElementById('menu-sheet').classList.add('open');}
 function closeMenu(){document.getElementById('menu-sheet').classList.remove('open');}
-function menuGo(id){closeMenu();go(id);}
+function menuGo(id){closeMenu();if(id==='carrello'){openCart();}else{go(id);}}
 
 /* ============ SCREENS ============ */
 const V=document.getElementById('viewport');
@@ -732,11 +827,12 @@ function homeHTML(){
     </div>
   </div>
 
-  <div class="grid3" style="margin-bottom:16px">
-    <div class="stat"><div class="ico" style="background:#e8f1ff;color:var(--blue)">👟</div><div class="v">${(S.steps/1000).toFixed(1)}k</div><div class="l">Passi / 10k</div></div>
+  <div class="grid3" style="margin-bottom:${S.stepsConnected?'16px':'8px'}">
+    <div class="stat"><div class="ico" style="background:#e8f1ff;color:var(--blue)">👟</div><div class="v" id="steps-val">${((S.steps||0)/1000).toFixed(1)}k</div><div class="l">Passi / 10k</div></div>
     <div class="stat"><div class="ico" style="background:#e8f6ff;color:#2a9adf">💧</div><div class="v">${S.water}/${S.waterGoal}</div><div class="l">Bicchieri</div></div>
-    <div class="stat"><div class="ico" style="background:var(--violet-s);color:var(--violet)">😴</div><div class="v">${S.sleep}h</div><div class="l">Sonno</div></div>
+    <div class="stat" onclick="setSleep()" style="cursor:pointer"><div class="ico" style="background:var(--violet-s);color:var(--violet)">😴</div><div class="v">${S.sleep?S.sleep+'h':'—'}</div><div class="l">Sonno · tocca</div></div>
   </div>
+  ${S.stepsConnected?'':`<button class="btn ghost sm" style="margin-bottom:16px" onclick="connectSteps()">👟 Connetti il contapassi del telefono</button>`}
 
   <div class="section-title">Obiettivo peso <span class="more" onclick="go('piano')">Adatta piano</span></div>
   <div class="card">
@@ -770,8 +866,8 @@ function homeHTML(){
 
   ${S.user.sex==='F'?`<div class="banner gp" onclick="go('ciclo')" style="margin-top:16px;cursor:pointer">
     <span class="b-ic">🌸</span>
-    <h4>Fase follicolare · giorno 9</h4>
-    <p>Energia in aumento. Buon momento per allenamenti intensi e cibi ricchi di ferro. Tocca per i dettagli.</p>
+    <h4>Fase ${cyclePhase().n.toLowerCase()} · giorno ${cycleDayNum()}</h4>
+    <p>${cyclePhase().txt} Tocca per impostare il ciclo e le voglie.</p>
   </div>`:''}
 
   <div class="section-title">Il tuo oggi <span class="more" onclick="go('planning')">Planning →</span></div>
@@ -792,6 +888,9 @@ function homeHTML(){
       <div class="rv">›</div>
     </div>
   </div>
+
+  <div class="section-title">Sonno & recupero</div>
+  ${sleepAdvice()}
 
   <div class="section-title">Consiglio del giorno</div>
   <div class="card">
@@ -849,6 +948,21 @@ function diarioHTML(){
   </div>`;
 }
 function setWater(n){S.water=(S.water===n?n-1:n);rebuild('diario');rebuild('home');toast('Idratazione aggiornata');}
+function sleepNeeded(){ const a=S.user.age||30; if(a<18) return {min:8,ideal:9}; if(a>64) return {min:7,ideal:8}; return {min:7,ideal:8}; }
+function setSleep(){ const v=prompt('Quante ore hai dormito stanotte? (es. 6.5)', S.sleep||''); if(v===null)return; const h=parseFloat((''+v).replace(',','.')); if(isNaN(h)||h<0||h>16){toast('Valore non valido');return;} S.sleep=+h.toFixed(1); save(); rebuild('home'); const need=sleepNeeded(); toast(h<need.min?('Sonno: '+S.sleep+'h · sotto il consigliato, guarda i consigli'):('Sonno aggiornato: '+S.sleep+'h')); }
+function sleepHabits(){ return ["📵 Niente schermi 1h prima","🕒 Orari regolari","☕ Stop caffeina dopo le 16","🌡️ Camera fresca e buia","🍵 Tisana rilassante","🧘 Respirazione prima di dormire"]; }
+function sleepAdvice(){
+  const need=sleepNeeded(); const h=S.sleep||0;
+  if(!h) return `<div class="card"><div class="h">😴 Sonno</div><div class="sub">Non hai ancora registrato il sonno di stanotte. <a onclick="setSleep()" style="color:var(--green-d);font-weight:700;cursor:pointer">Inseriscilo qui →</a></div></div>`;
+  if(h>=need.min) return `<div class="card"><div class="h">😴 Sonno <span class="pill">${h}h</span></div><div class="alert ok" style="margin:0"><span>✅</span><div>${h}h di sonno: adeguato per il tuo profilo (ideale ~${need.ideal}h). Ottimo per recupero, metabolismo e umore.</div></div></div>`;
+  return `<div class="card">
+    <div class="h">😴 Dormi poco <span class="pill" style="background:var(--coral-s);color:#d63a5c">${h}h / ${need.ideal}h consigliate</span></div>
+    <div class="alert warn"><span>⚠️</span><div>Hai dormito <b>${h}h</b>, sotto il minimo consigliato (${need.min}h) per la tua età. Il sonno scarso aumenta fame, voglie e stanchezza e rallenta i risultati.</div></div>
+    <div class="sub" style="margin-bottom:8px">🌙 Abitudini da provare stasera:</div>
+    <div class="chips">${sleepHabits().map(x=>`<span class="chip violet">${x}</span>`).join('')}</div>
+  </div>
+  ${suppRecoCard('Integratori per dormire meglio','In base al tuo sonno insufficiente:','sonno')}`;
+}
 function editWeight(){
   const v=prompt('Peso di oggi (kg):', S.wNow);
   if(v===null)return;
@@ -988,6 +1102,16 @@ const FOODS={
   ]
 };
 const CATS=[["colazione","Colazione","🥐"],["pranzo","Pranzo","🍲"],["spuntino","Spuntino","🍎"],["cena","Cena","🐟"]];
+function mealSet(){
+  const n=S.mealsCount||4;
+  if(n<=3) return [["colazione","Colazione","🥐"],["pranzo","Pranzo","🍲"],["cena","Cena","🐟"]];
+  if(n===4) return [["colazione","Colazione","🥐"],["pranzo","Pranzo","🍲"],["spuntino","Spuntino","🍎"],["cena","Cena","🐟"]];
+  return [["colazione","Colazione","🥐"],["spuntino","Spuntino mattina","🍎"],["pranzo","Pranzo","🍲"],["spuntino2","Spuntino pomeriggio","🍏"],["cena","Cena","🐟"]];
+}
+function foodKey(cat){return cat==='spuntino2'?'spuntino':cat;}
+function adjustKcal(delta){const wp=weightPlan();const cur=S.kcalCustom||wp.baseKcal;let v=Math.round((cur+delta)/10)*10;v=Math.min(wp.hiLim,Math.max(wp.loLim,v));S.kcalCustom=v;save();rebuild('piano');go('piano');toast('Calorie: '+v+' kcal/giorno');}
+function resetKcal(){S.kcalCustom=null;save();rebuild('piano');go('piano');toast('Calorie ripristinate al valore consigliato');}
+function setMeals(n){S.mealsCount=n;S.planChoices={};save();rebuild('piano');go('piano');toast(n+' pasti al giorno');}
 function dietOk(m){
   const d=S.diet||"Onnivora";
   if(d==="Vegetariana") return m.diet.includes("v")||m.diet.includes("vg");
@@ -997,23 +1121,35 @@ function dietOk(m){
 }
 function dislikedOk(m){
   const dis=(S.disliked||[]).map(x=>x.toLowerCase().trim()).filter(Boolean);
-  return !m.ing.some(i=>dis.some(d=>i.toLowerCase().includes(d)||d.includes(i.toLowerCase())));
+  if(!dis.length) return true;
+  const hay=(m.t+' '+m.ing.join(' ')).toLowerCase();
+  return !dis.some(d=> hay.includes(d));
 }
+const SWEET=['banana','cacao','miele','frutti','mela','ciocc','pancake','porridge','avena','sciroppo','budino','macedonia','overnight','french toast','mango','pere','mirtilli','cannella','granola','vaniglia','yogurt','skyr','ricotta','frullato','smoothie','pop corn','fondente'];
+const SALTY=['feta','tonno','pollo','salmone','uova','albumi','formaggio','hummus','olive','tacchino','cracker','edamame','gamberi','merluzzo','frittata','curry','pesto','ceci','lenticchie','tofu','platessa','orata','branzino','tempeh','manzo','bistecca','zuppa','cous cous','gallette','avocado','quinoa','riso','patate'];
+function craveMatch(m,crave){const hay=(m.t+' '+m.ing.join(' ')).toLowerCase();const arr=crave==='Dolce'?SWEET:SALTY;return arr.some(k=>hay.includes(k));}
 function seededShuffle(arr,seed){
   const a=arr.slice(); let s=(seed*2654435761)%2147483647; if(s<=0)s+=2147483646;
   for(let i=a.length-1;i>0;i--){ s=(s*16807)%2147483647; const j=s%(i+1); const t=a[i];a[i]=a[j];a[j]=t; }
   return a;
 }
 function availMeals(cat){
-  let list=FOODS[cat].filter(m=>dietOk(m)&&dislikedOk(m));
-  if(!list.length) list=FOODS[cat].filter(dislikedOk);
-  if(!list.length) list=FOODS[cat].slice();
+  const key=foodKey(cat);
+  let list=FOODS[key].filter(m=>dietOk(m)&&dislikedOk(m));
+  if(!list.length) list=FOODS[key].filter(dislikedOk);
+  if(!list.length) list=FOODS[key].slice();
   return list;
 }
+function catSalt(cat){let h=0;for(let i=0;i<cat.length;i++)h=(h*31+cat.charCodeAt(i))%9973;return h;}
 function genMeals(cat){
   const list=availMeals(cat);
-  const seed=((S.mealOffset&&S.mealOffset[cat])||0)+1;
-  return seededShuffle(list,seed).slice(0,3);
+  const seed=((S.mealOffset&&S.mealOffset[cat])||0)+1+catSalt(cat);
+  let sh=seededShuffle(list,seed);
+  if(S.cravings==='Dolce'||S.cravings==='Salato'){
+    const yes=sh.filter(m=>craveMatch(m,S.cravings)), no=sh.filter(m=>!craveMatch(m,S.cravings));
+    sh=yes.concat(no);
+  }
+  return sh.slice(0,3);
 }
 function mealDesc(o){return `P ${o.p} · C ${o.c} · G ${o.f}${o.diet.includes("vg")?" · vegan":(o.diet.includes("v")?" · veg":"")}`;}
 
@@ -1021,7 +1157,7 @@ function mealDesc(o){return `P ${o.p} · C ${o.c} · G ${o.f}${o.diet.includes("
 function weeklyPlan(){
   const days=["Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato","Domenica"];
   return days.map((day,di)=>{
-    const meals=CATS.map(([cat,label])=>{
+    const meals=mealSet().map(([cat,label])=>{
       const list=availMeals(cat);
       let pick;
       if(di===0 && S.planChoices[cat]) pick=list.find(m=>m.t===S.planChoices[cat])||seededShuffle(list,((S.mealOffset&&S.mealOffset[cat])||0)+1)[0];
@@ -1086,8 +1222,8 @@ function planHTML(){
       </div>
     </div>
     <div class="sub" style="margin:12px 0 6px">Ritmo di ${S.wNow} kg → ${S.wGoal} kg</div>
-    <input type="range" min="4" max="24" value="${S.wWeeks}" style="width:100%" oninput="S.wWeeks=+this.value;document.getElementById('wk-lbl').textContent=this.value">
-    <div class="sub" style="text-align:center">Traguardo in <b id="wk-lbl">${S.wWeeks}</b> settimane · <a onclick="rebuild('piano');go('piano')" style="color:var(--green-d);font-weight:700;cursor:pointer">ricalcola</a></div>
+    <input type="range" min="2" max="24" value="${S.wWeeks}" style="width:100%" oninput="S.wWeeks=+this.value;document.getElementById('wk-lbl').textContent=this.value" onchange="S.kcalCustom=null;save();rebuild('piano');go('piano')">
+    <div class="sub" style="text-align:center">Riformula il piano su <b id="wk-lbl">${S.wWeeks}</b> settimane · <a onclick="S.kcalCustom=null;save();rebuild('piano');go('piano')" style="color:var(--green-d);font-weight:700;cursor:pointer">applica</a></div>
     <div class="alert info" style="margin-top:12px"><span>🔄</span><div>Man mano che aggiorni il peso, calorie e porzioni dei pasti qui sotto si riadattano automaticamente.</div></div>
   </div>
 
@@ -1121,8 +1257,21 @@ function planHTML(){
     </div>
   </div>
 
+  <div class="card">
+    <div class="h">🎚️ Personalizza</div>
+    <div class="sub" style="margin-bottom:8px">Calorie giornaliere (modificabili entro un limite sicuro ${wp.loLim}–${wp.hiLim}):</div>
+    <div style="display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:6px">
+      <button class="add" style="background:var(--line);color:var(--ink);width:40px;height:40px;font-size:22px" onclick="adjustKcal(-50)">−</button>
+      <div style="text-align:center;min-width:90px"><b style="font-size:22px">${wp.kcal}</b><div class="sub" style="font-size:11px">kcal/giorno</div></div>
+      <button class="add" style="width:40px;height:40px;font-size:22px" onclick="adjustKcal(50)">＋</button>
+    </div>
+    ${S.kcalCustom?`<div class="sub" style="text-align:center"><a onclick="resetKcal()" style="color:var(--green-d);font-weight:700;cursor:pointer">↺ Torna al consigliato (${wp.baseKcal})</a></div>`:''}
+    <div class="sub" style="margin:12px 0 6px">Quanti pasti al giorno?</div>
+    <div class="seg" id="meals-seg">${[3,4,5].map(n=>`<button class="${(S.mealsCount||4)===n?'on':''}" onclick="setMeals(${n})">${n} pasti</button>`).join('')}</div>
+  </div>
+
   <div class="section-title">I tuoi pasti · scegli l'opzione</div>
-  ${CATS.map(([cat,label,ic])=>{
+  ${mealSet().map(([cat,label,ic])=>{
     const opts=genMeals(cat); const sel=S.planChoices[cat]||(opts[0]&&opts[0].t);
     return `<div class="card">
       <div class="h">${ic} ${label}<span class="pill">${opts.length} opzioni</span></div>
@@ -1152,30 +1301,58 @@ function pickOpt(cat,el){const t=decodeURIComponent(el.dataset.t);S.planChoices[
 function segPick(id,btn){document.querySelectorAll('#'+id+' button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
 
 /* ---------- CICLO / ORMONALE ---------- */
+function cyc(){ if(!S.cycle) S.cycle={start:1,cycleLen:28,periodLen:5}; return S.cycle; }
+function cycleClass(d){
+  const c=cyc(), s=c.start;
+  if(d>=s && d<=s+c.periodLen-1) return 'period';
+  const ov=s+c.cycleLen-14;
+  if(d===ov) return 'ovul';
+  if(d>=ov-4 && d<ov) return 'fertile';
+  const np=s+c.cycleLen;
+  if(np<=31 && d>=np && d<=np+c.periodLen-1) return 'pred';
+  return '';
+}
+function cycleDayNum(){ const c=cyc(); let dc=19-c.start+1; if(dc<=0)dc+=c.cycleLen; if(dc>c.cycleLen)dc=((dc-1)%c.cycleLen)+1; return dc; }
+function cyclePhase(){ const c=cyc(), dc=cycleDayNum(), ov=c.cycleLen-14;
+  if(dc<=c.periodLen) return {n:'Mestruale',i:0,txt:'Energia più bassa: privilegia ferro e riposo. Ascoltati.'};
+  if(dc<ov-1) return {n:'Follicolare',i:1,txt:'Energia in crescita: ottimo per allenamenti intensi e proteine.'};
+  if(dc<=ov+1) return {n:'Ovulatoria',i:2,txt:'Picco di energia: sfrutta gli allenamenti più impegnativi.'};
+  return {n:'Luteale',i:3,txt:'Possibili voglie e gonfiore: più fibre, magnesio e pasti regolari.'};
+}
+function fmtDay(d){ return d<=31 ? d+' lug' : (d-31)+' ago'; }
+function setPeriodStart(d){cyc().start=d;save();rebuild('ciclo');go('ciclo');rebuild('home');toast('Inizio mestruazioni: '+d+' luglio');}
+function adjustCycle(field,delta){const c=cyc();if(field==='cycleLen')c.cycleLen=Math.min(35,Math.max(21,c.cycleLen+delta));else c.periodLen=Math.min(8,Math.max(2,c.periodLen+delta));save();rebuild('ciclo');go('ciclo');rebuild('home');}
+function setCraving(v,btn){S.cravings=(S.cravings===v?null:v);document.querySelectorAll('#crave-seg .chip').forEach(b=>b.classList.remove('sel'));if(S.cravings&&btn)btn.classList.add('sel');save();rebuild('piano');toast(S.cravings?('Dieta adattata: più '+v.toLowerCase()+', entro le tue kcal'):'Voglie azzerate');}
 function cicloHTML(){
-  // giorno corrente ciclo = 9
+  const c=cyc(); const ph=cyclePhase(); const dc=cycleDayNum();
+  const ov=c.start+c.cycleLen-14; const np=c.start+c.cycleLen;
   const days=Array.from({length:35},(_,i)=>i+1);
   return `
-  <div class="topbar"><div class="hello"><div class="k">Ciclo · giorno 9 di 28</div><div class="n">Salute femminile 🌸</div></div><div class="avatar" onclick="go('profilo')">${S.user.initials}</div></div>
+  <div class="topbar"><div class="hello"><div class="k">Ciclo · giorno ${dc} di ${c.cycleLen}</div><div class="n">Salute femminile 🌸</div></div><div class="avatar" onclick="go('profilo')">${S.user.initials}</div></div>
 
-  <div class="banner gp"><span class="b-ic">🌸</span><h4>Fase follicolare</h4><p>Estrogeni in aumento · energia e umore in crescita. Prossime mestruazioni stimate: 8 agosto.</p></div>
+  <div class="banner gp"><span class="b-ic">🌸</span><h4>Fase ${ph.n.toLowerCase()}</h4><p>${ph.txt} Prossime mestruazioni stimate: ${fmtDay(np)}.</p></div>
 
   <div class="phase">
-    <div>Mestruale</div><div class="on">Follicolare</div><div>Ovulatoria</div><div>Luteale</div>
+    ${['Mestruale','Follicolare','Ovulatoria','Luteale'].map((n,i)=>`<div class="${i===ph.i?'on':''}">${n}</div>`).join('')}
   </div>
 
   <div class="card">
-    <div class="h">📅 Calendario ciclo <span class="pill">Luglio</span></div>
+    <div class="h">✏️ Imposta il tuo ciclo</div>
+    <div class="sub" style="margin-bottom:10px">Tocca nel calendario il <b>primo giorno delle ultime mestruazioni</b>, poi regola le durate. L'app aggiorna fasi e previsioni.</div>
+    <div class="grid2">
+      <div style="text-align:center"><div class="sub">Durata ciclo</div><div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:4px"><button class="add" style="width:32px;height:32px;background:var(--line);color:var(--ink);font-size:18px" onclick="adjustCycle('cycleLen',-1)">−</button><b>${c.cycleLen} gg</b><button class="add" style="width:32px;height:32px;font-size:18px" onclick="adjustCycle('cycleLen',1)">＋</button></div></div>
+      <div style="text-align:center"><div class="sub">Durata mestruazioni</div><div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:4px"><button class="add" style="width:32px;height:32px;background:var(--line);color:var(--ink);font-size:18px" onclick="adjustCycle('periodLen',-1)">−</button><b>${c.periodLen} gg</b><button class="add" style="width:32px;height:32px;font-size:18px" onclick="adjustCycle('periodLen',1)">＋</button></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="h">📅 Calendario ciclo <span class="pill">Luglio · tocca un giorno</span></div>
     <div class="cal">
       ${["L","M","M","G","V","S","D"].map(d=>`<div class="dow">${d}</div>`).join('')}
       ${days.map(d=>{
-        let cls='';
-        if(d>=1&&d<=5) cls='period';
-        else if(d>=8&&d<=12) cls='fertile';
-        else if(d===13) cls='ovul';
-        else if(d>=29&&d<=33) cls='pred';
-        if(d===9) cls+=' today';
-        return `<div class="d ${cls}">${d<=31?d:''}</div>`;
+        let cls=cycleClass(d);
+        if(d===19) cls+=' today';
+        return `<div class="d ${cls}" ${d<=31?`onclick="setPeriodStart(${d})" style="cursor:pointer"`:''}>${d<=31?d:''}</div>`;
       }).join('')}
     </div>
     <div class="legend">
@@ -1187,9 +1364,18 @@ function cicloHTML(){
   </div>
 
   <div class="card">
+    <div class="h">🍫 Le tue voglie ora</div>
+    <div class="sub" style="margin-bottom:10px">In questo periodo hai più voglia di dolce o salato? Adatto le proposte dei pasti restando dentro le tue calorie.</div>
+    <div class="chips" id="crave-seg">
+      ${["Dolce","Salato","Nessuna"].map(v=>`<button class="chip pink ${S.cravings===v||(v==='Nessuna'&&!S.cravings)?'sel':''}" onclick="setCraving('${v}',this)">${v==='Dolce'?'🍫 Dolce':(v==='Salato'?'🥨 Salato':'Nessuna')}</button>`).join('')}
+    </div>
+    ${S.cravings?`<div class="sub" style="margin-top:10px">✨ Piano adattato: più opzioni <b>${S.cravings.toLowerCase()}</b>. <a onclick="go('piano')" style="color:var(--green-d);font-weight:700;cursor:pointer">Vedi piano →</a></div>`:''}
+  </div>
+
+  <div class="card">
     <div class="h">🩺 Rilevamento disfunzioni</div>
-    <div class="alert warn"><span>⚠️</span><div><b>Cicli irregolari rilevati.</b> Negli ultimi 4 mesi la durata è variata di 9 giorni (21–30). Possibile segnale ormonale da approfondire.</div></div>
-    <div class="alert info"><span>📊</span><div>Sintomi ricorrenti in fase luteale: acne, gonfiore, sbalzi d'umore. Pattern compatibile con sensibilità ormonale.</div></div>
+    <div class="alert ${c.cycleLen<24||c.cycleLen>31?'warn':'ok'}"><span>${c.cycleLen<24||c.cycleLen>31?'⚠️':'✅'}</span><div>${c.cycleLen<24||c.cycleLen>31?'La durata impostata ('+c.cycleLen+' gg) è fuori dal range tipico (24–31): se è ricorrente, meglio approfondire.':'Ciclo di '+c.cycleLen+' giorni: rientra nel range regolare.'}</div></div>
+    <div class="alert info"><span>📊</span><div>Se noti sintomi ricorrenti in fase luteale (acne, gonfiore, sbalzi d'umore), registrali qui sotto: l'app cerca pattern.</div></div>
     <button class="btn pink sm" onclick="go('prenota')">Prenota visita ginecologica / endocrinologica</button>
   </div>
 
@@ -1212,10 +1398,10 @@ function cicloHTML(){
   ${suppRecoCard('Integratori per la tua fase','Selezionati in base al ciclo e ai sintomi che registri:','ciclo')}
 
   <div class="card">
-    <div class="h">🤖 Previsioni AI</div>
-    <div class="row"><div class="ri" style="background:var(--coral-s)">🩸</div><div class="rt"><b>Prossime mestruazioni</b><small>tra 20 giorni</small></div><div class="rv" style="color:var(--coral)">8 ago</div></div>
-    <div class="row"><div class="ri" style="background:var(--violet-s)">🥚</div><div class="rt"><b>Ovulazione stimata</b><small>finestra fertile aperta</small></div><div class="rv" style="color:var(--violet)">24 lug</div></div>
-    <div class="row"><div class="ri" style="background:var(--mint)">📈</div><div class="rt"><b>Regolarità</b><small>media 26 gg · varianza alta</small></div><div class="rv" style="color:var(--amber)">Media</div></div>
+    <div class="h">🤖 Previsioni</div>
+    <div class="row"><div class="ri" style="background:var(--coral-s)">🩸</div><div class="rt"><b>Prossime mestruazioni</b><small>tra ${Math.max(0,np-19)} giorni</small></div><div class="rv" style="color:var(--coral)">${fmtDay(np)}</div></div>
+    <div class="row"><div class="ri" style="background:var(--violet-s)">🥚</div><div class="rt"><b>Ovulazione stimata</b><small>finestra fertile ~${fmtDay(ov-4)}–${fmtDay(ov)}</small></div><div class="rv" style="color:var(--violet)">${fmtDay(ov)}</div></div>
+    <div class="row"><div class="ri" style="background:var(--mint)">📈</div><div class="rt"><b>Durata ciclo</b><small>${c.cycleLen} giorni · mestruazioni ${c.periodLen} gg</small></div><div class="rv" style="color:var(--green-d)">${c.cycleLen<24||c.cycleLen>31?'Irreg.':'Regolare'}</div></div>
   </div>
   `;
 }
@@ -1318,50 +1504,89 @@ const PRODUCTS=[
   {n:"Collagene Beauty",d:"Pelle, capelli, unghie",p:29.90,ic:"✨",bg:"var(--coral-s)",tag:"Estetica"},
   {n:"Proteine Whey",d:"Recupero muscolare",p:34.90,ic:"💪",bg:"var(--mint)",tag:""},
   {n:"Probiotici",d:"Equilibrio intestinale",p:22.00,ic:"🦠",bg:"var(--mint)",tag:""},
-  {n:"Inositolo",d:"Equilibrio ormonale · PCOS",p:26.50,ic:"🌸",bg:"var(--coral-s)",tag:"Per te"}
+  {n:"Inositolo",d:"Equilibrio ormonale · PCOS",p:26.50,ic:"🌸",bg:"var(--coral-s)",tag:"Per te"},
+  {n:"Multivitaminico",d:"Completo giornaliero",p:19.90,ic:"💊",bg:"#e8f1ff",tag:""},
+  {n:"Creatina",d:"Forza & performance",p:21.90,ic:"⚡",bg:"var(--mint)",tag:"Sport"},
+  {n:"Zinco",d:"Pelle & difese",p:12.90,ic:"🔷",bg:"#e8f6ff",tag:""},
+  {n:"Ashwagandha",d:"Stress & equilibrio",p:23.50,ic:"🌿",bg:"var(--mint)",tag:""},
+  {n:"Vitamina C",d:"Antiossidante & difese",p:11.90,ic:"🍊",bg:"#fff6e0",tag:""},
+  {n:"Melatonina",d:"Sonno regolare",p:13.90,ic:"😴",bg:"var(--violet-s)",tag:"Sonno"},
+  {n:"Caffeina + L-teanina",d:"Focus & energia",p:17.90,ic:"☕",bg:"#fff0e0",tag:"Energia"},
+  {n:"Fibre + Psillio",d:"Regolarità intestinale",p:14.90,ic:"🌾",bg:"var(--mint)",tag:""}
 ];
+function allProducts(){ return PRODUCTS.concat(S.customProducts||[]); }
+function canSell(){ return !!(S.pro && S.pro.status==='verificato'); }
 function shopHTML(){
+  const prods=allProducts(); const PAGE=8; const pages=Math.max(1,Math.ceil(prods.length/PAGE));
+  const pg=Math.min(S.shopPage||0,pages-1); const slice=prods.slice(pg*PAGE,pg*PAGE+PAGE);
   return `
-  <div class="topbar"><div class="hello"><div class="k">Consigliati dalla tua AI</div><div class="n">Shop integratori</div></div>
+  <div class="topbar"><div class="hello"><div class="k">Integratori · ${prods.length} prodotti</div><div class="n">🛍️ Integratori</div></div>
     <button class="avatar" style="border:none;position:relative" onclick="openCart()">🛒<span class="cartbadge" id="shopcart" style="display:none"></span></button></div>
 
-  <div class="banner gv"><span class="b-ic">💊</span><h4>Kit personalizzato</h4><p>In base al tuo piano e alla fase del ciclo: Ferro, Inositolo e Omega-3. Sconto bundle -20%.</p></div>
+  <div class="banner gv" onclick="openCart()" style="cursor:pointer"><span class="b-ic">💊</span><h4>Kit personalizzato</h4><p>In base al tuo piano e alla fase del ciclo: Ferro, Inositolo e Omega-3. Sconto bundle -20%.</p></div>
 
-  <div class="chips" style="margin-bottom:16px;overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px">
-    ${["Per te","Estetica","Ormonale","Energia","Sonno","Sport"].map((c,i)=>`<button class="chip ${i===0?'sel':''}" style="white-space:nowrap" onclick="segSelect(this)">${c}</button>`).join('')}
-  </div>
+  ${canSell()?`<button class="btn ghost sm" style="margin-bottom:12px" onclick="addProduct()">＋ Inserisci un tuo prodotto (creator verificato)</button>`:`<div class="alert info" style="padding:10px 12px"><span>🛒</span><div>I professionisti verificati possono inserire prodotti reali. Diventa professionista in Profilo.</div></div>`}
 
   <div class="grid2" id="prod-grid">
-    ${PRODUCTS.map((p,i)=>`
+    ${slice.map((p)=>{const gi=prods.indexOf(p);return `
       <div class="prod">
         ${p.tag?`<span class="tagbadge">${p.tag}</span>`:''}
-        <div class="pimg" style="background:${p.bg}">${p.ic}</div>
-        <b>${p.n}</b><div class="pd">${p.d}</div>
-        <div class="prow"><span class="price">€${p.p.toFixed(2)}</span><button class="add" onclick="addCart(${i})">＋</button></div>
-      </div>`).join('')}
+        <div class="pimg" style="background:${p.bg||'var(--mint)'}">${p.ic||'💊'}</div>
+        <b>${p.n}</b><div class="pd">${p.d||''}${p.by?' · di '+p.by:''}</div>
+        <div class="prow"><span class="price">€${(+p.p).toFixed(2)}</span><button class="add" onclick="addCart(${gi})">＋</button></div>
+      </div>`;}).join('')}
   </div>
 
+  <div style="display:flex;align-items:center;justify-content:center;gap:18px;margin-top:16px">
+    <button class="btn sm sec" style="width:auto;padding:9px 18px;${pg===0?'opacity:.35':''}" onclick="shopPage(${pg-1})">‹ Prec</button>
+    <div class="sub" style="font-weight:700">Pagina ${pg+1} / ${pages}</div>
+    <button class="btn sm sec" style="width:auto;padding:9px 18px;${pg>=pages-1?'opacity:.35':''}" onclick="shopPage(${pg+1})">Succ ›</button>
+  </div>
+
+  <button class="btn" style="margin-top:16px" onclick="openCart()">🛒 Vai al carrello (${cartCount()})</button>
   <div class="card" style="margin-top:16px">
     <div class="h">🔁 Abbonamento mensile</div>
     <div class="sub">Ricevi i tuoi integratori ogni mese con -15% e promemoria di assunzione automatici. Salta o annulla quando vuoi.</div>
     <button class="btn violet sm" style="margin-top:12px" onclick="toast('Abbonamento attivato · consegna ogni 30 giorni')">Attiva abbonamento</button>
   </div>`;
 }
-function addCart(i){const p=PRODUCTS[i];const e=S.cart.find(x=>x.n===p.n);if(e)e.q++;else S.cart.push({n:p.n,p:p.p,q:1});renderCartBadge();const b=document.getElementById('shopcart');if(b){const c=cartCount();b.style.display=c?'flex':'none';b.textContent=c;}toast(p.n+' aggiunto al carrello');}
+function shopPage(n){const prods=allProducts();const pages=Math.max(1,Math.ceil(prods.length/8));S.shopPage=Math.min(Math.max(0,n),pages-1);rebuild('shop');go('shop');document.getElementById('viewport').scrollTop=0;}
+function addProduct(){
+  if(!canSell()){toast('Solo i professionisti verificati possono inserire prodotti');return;}
+  const n=prompt('Nome prodotto:'); if(!n||!n.trim())return;
+  const d=prompt('Descrizione breve:')||'';
+  const pr=parseFloat((prompt('Prezzo € (es. 19.90):','19.90')||'').replace(',','.')); if(isNaN(pr)){toast('Prezzo non valido');return;}
+  S.customProducts=S.customProducts||[]; S.customProducts.push({n:n.trim(),d:d.trim(),p:pr,ic:'🧪',bg:'#e8f1ff',tag:'Creator',by:S.user.name});
+  save(); rebuild('shop'); go('shop'); toast('Prodotto pubblicato nello shop ✓');
+}
+function addCart(i){const p=allProducts()[i];if(!p)return;const e=S.cart.find(x=>x.n===p.n);if(e)e.q++;else S.cart.push({n:p.n,p:+p.p,q:1});save();renderCartBadge();const b=document.getElementById('shopcart');if(b){const c=cartCount();b.style.display=c?'flex':'none';b.textContent=c;}toast(p.n+' aggiunto al carrello');}
+function cartQty(n,delta){const it=S.cart.find(x=>x.n===n);if(!it)return;it.q+=delta;if(it.q<=0){S.cart=S.cart.filter(x=>x.n!==n);}save();renderCartBadge();openCart();}
 function openCart(){
-  if(!S.cart.length){toast('Il carrello è vuoto');return;}
-  const tot=S.cart.reduce((a,b)=>a+b.p*b.q,0);
   go('carrello');
-  document.getElementById('sc-carrello').innerHTML=`
+  const el=document.getElementById('sc-carrello'); if(!el)return;
+  if(!S.cart.length){
+    el.innerHTML=`<button class="back" onclick="go('shop')">← Vai agli integratori</button>
+      <div class="topbar" style="padding-top:0"><div class="hello"><div class="k">Vuoto</div><div class="n">🛒 Carrello</div></div></div>
+      <div class="card" style="text-align:center"><div style="font-size:44px">🛒</div><div class="sub">Il carrello è vuoto. Aggiungi integratori dallo shop.</div><button class="btn sm" style="margin-top:12px" onclick="go('shop')">Vai agli integratori</button></div>`;
+    return;
+  }
+  const tot=S.cart.reduce((a,b)=>a+b.p*b.q,0);
+  el.innerHTML=`
     <button class="back" onclick="go('shop')">← Continua lo shopping</button>
-    <div class="topbar" style="padding-top:0"><div class="hello"><div class="k">${cartCount()} articoli</div><div class="n">Il tuo carrello</div></div></div>
+    <div class="topbar" style="padding-top:0"><div class="hello"><div class="k">${cartCount()} articoli</div><div class="n">🛒 Il tuo carrello</div></div></div>
     <div class="card">
-      ${S.cart.map((it,i)=>`<div class="row"><div class="ri" style="background:var(--mint)">💊</div><div class="rt"><b>${it.n}</b><small>Quantità: ${it.q}</small></div><div class="rv">€${(it.p*it.q).toFixed(2)}</div></div>`).join('')}
+      ${S.cart.map(it=>`<div class="row"><div class="ri" style="background:var(--mint)">💊</div><div class="rt"><b>${it.n}</b><small>€${(+it.p).toFixed(2)} cad.</small></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="add" style="width:28px;height:28px;font-size:18px;background:var(--line);color:var(--ink)" onclick="cartQty('${it.n.replace(/'/g,'')}',-1)">−</button>
+          <b style="min-width:18px;text-align:center">${it.q}</b>
+          <button class="add" style="width:28px;height:28px;font-size:18px" onclick="cartQty('${it.n.replace(/'/g,'')}',1)">＋</button>
+        </div></div>`).join('')}
       <div class="divider"></div>
       <div class="row"><div class="rt"><b>Totale</b><small>spedizione gratuita</small></div><div class="rv" style="color:var(--green-d);font-size:18px">€${tot.toFixed(2)}</div></div>
     </div>
-    <button class="btn" onclick="S.cart=[];renderCartBadge();toast('Ordine confermato ✓ · in arrivo in 48h');go('shop')">Procedi al pagamento</button>`;
+    <button class="btn" onclick="checkout()">Procedi al pagamento · €${tot.toFixed(2)}</button>`;
 }
+function checkout(){ S.cart=[]; save(); renderCartBadge(); toast('Ordine confermato ✓ · in arrivo in 48h'); go('shop'); }
 
 /* ---------- COACH AI ---------- */
 function coachHTML(){
@@ -1536,6 +1761,12 @@ function recommend(context){
       {n:"Proteine Whey",why:"Aumenta sazietà e preserva la massa muscolare durante il deficit"},
       {n:"Probiotici",why:"Sostiene digestione e metabolismo nel percorso di dimagrimento"},
       {n:"Omega-3 Ultra",why:"Sostiene metabolismo e pelle mentre perdi peso"}
+    ];
+  } else if(context==='sonno'){
+    items=[
+      {n:"Melatonina",why:"Riduce il tempo per addormentarsi e regola il ritmo sonno-veglia"},
+      {n:"Magnesio + B6",why:"Favorisce il rilassamento muscolare e un sonno più profondo"},
+      {n:"Ashwagandha",why:"Aiuta a gestire stress e cortisolo, spesso causa di sonno disturbato"}
     ];
   } else { // home: mix collegato al quadro attuale
     items=[
@@ -1849,10 +2080,11 @@ function feedShorts(only){
 function communityHTML(){
   return `
   <div class="topbar"><div class="hello"><div class="k">2.4k creator · ${(S.following||[]).length} seguiti</div><div class="n">👥 Community</div></div>
-    <button class="compose-btn" style="position:static" onclick="${cloudOn()&&loggedIn()?'composeVideoReal()':'composeShort()'}">🎬 Pubblica</button></div>
+    <button class="compose-btn" style="position:static" onclick="composeVideo()">🎬 Crea</button></div>
   <div class="seg" id="com-tab" style="margin-bottom:14px">
     <button class="on" onclick="comTab('perte',this)">Per te</button>
     <button onclick="comTab('seguiti',this)">Seguiti</button>
+    <button onclick="comTab('bozze',this)">Bozze</button>
     <button onclick="comTab('chat',this)">Chat</button>
   </div>
   <div id="com-body"></div>`;
@@ -1860,19 +2092,33 @@ function communityHTML(){
 function comTab(t,btn){document.querySelectorAll('#com-tab button').forEach(b=>b.classList.remove('on'));if(btn)btn.classList.add('on');renderComBody(t);}
 function renderComBody(t){
   const b=document.getElementById('com-body'); if(!b)return; b.dataset.t=t;
+  if(t==='bozze'){
+    const head=`<div class="alert info"><span>🔒</span><div>Le bozze sono <b>visibili solo a te</b>${cloudOn()&&loggedIn()?' e salvate nel cloud':''}. Modificale e pubblicale quando vuoi.</div></div>
+      <button class="btn" style="margin-bottom:14px" onclick="composeVideo()">🎬 Crea un nuovo video</button>`;
+    if(cloudOn()&&loggedIn()){
+      b.innerHTML=head+'<div class="card" style="text-align:center"><div class="sub">Caricamento bozze…</div></div>';
+      cloudLoadDrafts().then(rows=>{
+        CLOUD_DRAFTS=rows.map(r=>({id:r.id,cloudId:r.id,src:r.video_url,videoUrl:r.video_url,caption:r.caption,type:r.type,overlays:r.overlays||[],music:r.music,voiceover:r.voiceover,muteOriginal:r.mute,cloud:true}));
+        b.innerHTML=head+(CLOUD_DRAFTS.length?CLOUD_DRAFTS.map(draftCard).join(''):'<div class="card" style="text-align:center"><div style="font-size:40px">📝</div><div class="sub">Nessuna bozza nel cloud.</div></div>');
+      });
+      return;
+    }
+    b.innerHTML=head+(DRAFTS.length?DRAFTS.map(draftCard).join(''):'<div class="card" style="text-align:center"><div style="font-size:40px">📝</div><div class="sub">Nessuna bozza. Registra o scegli un video, aggiungi scritte, musica o doppiaggio, e salvalo come bozza.</div></div>');
+    return;
+  }
   if(t==='perte'||t==='seguiti'){
+    const mine=(t==='perte'&&MYSHORTS.length)?`<div class="shorts-feed" id="shorts-feed-my">${MYSHORTS.map(myShortCard).join('')}</div>`:'';
     if(cloudOn()&&loggedIn()){
       b.innerHTML='<div class="card" style="text-align:center"><div class="sub">Caricamento feed reale…</div></div>';
       cloudFeed().then(posts=>{
-        if(!posts.length){ b.innerHTML=`<div class="card" style="text-align:center"><div style="font-size:44px">🎬</div><div class="h" style="justify-content:center">Ancora nessun video</div><div class="sub">Sii il primo! Tocca <b>🎬 Pubblica</b> in alto e carica il tuo "What I eat in a day" o allenamento.</div></div>`; return; }
         const ranked=posts.map(p=>({p,sc:(p.likes||0)*3 + (p.diet===S.diet?50:0) + (p.goal===S.user.goal?40:0)})).sort((a,b)=>b.sc-a.sc).map(x=>x.p);
-        b.innerHTML=`<div class="sub" style="margin:0 4px 8px">✨ Feed reale personalizzato per la tua dieta ${S.diet||''} e obiettivo ${S.user.goal||''}</div><div class="shorts-feed" id="shorts-feed">${ranked.map(realShortCard).join('')}</div>`;
+        b.innerHTML=(mine||'')+(posts.length?`<div class="sub" style="margin:0 4px 8px">✨ Feed reale personalizzato per la tua dieta ${S.diet||''} e obiettivo ${S.user.goal||''}</div><div class="shorts-feed" id="shorts-feed">${ranked.map(realShortCard).join('')}</div>`:(mine?'':`<div class="card" style="text-align:center"><div style="font-size:44px">🎬</div><div class="h" style="justify-content:center">Ancora nessun video</div><div class="sub">Sii il primo! Tocca <b>🎬 Crea</b> in alto.</div></div>`));
       });
       return;
     }
     const list=feedShorts(t);
-    if(!list.length){b.innerHTML='<div class="card" style="text-align:center"><div class="sub">Non segui ancora nessuno.<br>Vai su "Per te" e tocca <b>+ Segui</b> sui creator che ti piacciono.</div></div>';return;}
-    b.innerHTML=`<div class="sub" style="margin:0 4px 8px">${t==='perte'?'✨ Feed personalizzato per la tua dieta '+(S.diet||'')+' e il tuo obiettivo '+(S.user.goal||''):'👥 Solo i creator che segui'}${cloudOn()?'':' · <a onclick="go(\'cloud\')" style="color:var(--green-d);font-weight:700;cursor:pointer">attiva video reali</a>'}</div>
+    if(!list.length&&!mine){b.innerHTML='<div class="card" style="text-align:center"><div class="sub">Non segui ancora nessuno.<br>Vai su "Per te" e tocca <b>+ Segui</b> sui creator che ti piacciono.</div></div>';return;}
+    b.innerHTML=(mine||'')+`<div class="sub" style="margin:0 4px 8px">${t==='perte'?'✨ Feed personalizzato per la tua dieta '+(S.diet||'')+' e il tuo obiettivo '+(S.user.goal||''):'👥 Solo i creator che segui'}${cloudOn()?'':' · <a onclick="go(\'cloud\')" style="color:var(--green-d);font-weight:700;cursor:pointer">attiva video reali</a>'}</div>
       <div class="shorts-feed" id="shorts-feed">${list.map(s=>shortCard(s)).join('')}</div>`;
   } else {
     b.innerHTML=`
@@ -1906,10 +2152,15 @@ function shortCard(s){
   </div>`;
 }
 function realShortCard(p){
+  const ovs=Array.isArray(p.overlays)?p.overlays:[];
+  const musicName=p.music?(p.music.name||p.music.preset):'';
   return `<div class="short" data-pid="${p.id}">
-    <video src="${p.video_url}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" playsinline loop muted controls preload="metadata"></video>
+    <video src="${p.video_url}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" playsinline loop ${p.mute?'muted':''} controls preload="metadata"></video>
+    ${ovs.map(o=>`<div style="position:absolute;left:50%;top:${o.top||'45%'};transform:translateX(-50%);color:${o.color||'#fff'};font-weight:800;font-size:${o.size||24}px;text-shadow:0 2px 10px rgba(0,0,0,.8);text-align:center;max-width:88%">${(o.text||'').replace(/</g,'&lt;')}</div>`).join('')}
+    ${p.music&&p.music.src?`<audio src="${p.music.src}" loop></audio>`:''}
+    ${p.voiceover?`<audio src="${p.voiceover}" loop></audio>`:''}
     <div class="grad"></div>
-    <div class="badge">▶ ${p.type||'Video'}</div>
+    <div class="badge">▶ ${p.type||'Video'}${musicName?' · 🎵 '+musicName:''}</div>
     <div class="rail">
       <button onclick="likeRealPost('${p.id}',${p.likes||0},this)"><span>🤍</span><span class="cnt">${fmt(p.likes||0)}</span></button>
       <button onclick="toast('Commenti in arrivo')"><span>💬</span><span class="cnt">0</span></button>
@@ -1923,17 +2174,136 @@ function realShortCard(p){
   </div>`;
 }
 function likeRealPost(id,cur,btn){ cloudLikePost(id,cur); btn.innerHTML='<span>❤️</span><span class="cnt">'+fmt((cur||0)+1)+'</span>'; }
-function composeVideoReal(){
-  if(!cloudOn()||!loggedIn()){toast('Attiva il cloud e accedi per caricare video');go('cloud');return;}
-  const inp=document.createElement('input'); inp.type='file'; inp.accept='video/*'; inp.setAttribute('capture','user');
-  inp.onchange=async()=>{ const f=inp.files&&inp.files[0]; if(!f)return;
-    const cap=prompt('Descrizione del video (es. What I eat in a day):'); if(cap===null)return;
-    toast('Caricamento video in corso…');
-    try{ await cloudUploadVideo(f,{cap:(cap||'').trim()||'Il mio short',type:'What I eat'}); toast('Video pubblicato! 🎬'); renderComBody('perte'); }
-    catch(e){ toast('Errore: '+(e.message||e)); }
-  };
+/* ===== EDITOR VIDEO + BOZZE ===== */
+let DRAFTS=[], MYSHORTS=[];
+let _editState=null,_editFile=null,_editSrc=null,_voiceRec=null,_voiceChunks=[],_bgAudio=null,_bgCtx=null;
+function composeVideo(){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='video/*';
+  inp.onchange=()=>{ const f=inp.files&&inp.files[0]; if(!f)return; const url=URL.createObjectURL(f); openEditor(url,f); };
   inp.click();
 }
+function openEditor(src,file,draft){
+  _editSrc=draft?draft.src:src; _editFile=file||null;
+  _editState=draft?JSON.parse(JSON.stringify(draft)):{id:Date.now(),caption:'',type:'What I eat',overlays:[],music:null,voiceover:null,muteOriginal:false,src:_editSrc};
+  document.getElementById('editor').classList.add('open'); renderEditor();
+}
+function closeEditor(){ stopBg(); if(_voiceRec&&_voiceRec.state==='recording'){try{_voiceRec.stop();}catch(e){}} const e=document.getElementById('editor'); e.classList.remove('open'); e.innerHTML=''; }
+function renderEditor(){
+  const st=_editState; const e=document.getElementById('editor');
+  e.innerHTML=`
+   <div class="ed-stage" id="ed-stage">
+     <video id="ed-video" src="${_editSrc}" playsinline autoplay loop ${st.muteOriginal?'muted':''}></video>
+     ${st.overlays.map((o,i)=>`<div class="ed-ov" style="top:${o.top};color:${o.color||'#fff'};font-size:${o.size||24}px" onclick="editOverlay(${i})">${o.text}</div>`).join('')}
+   </div>
+   <div class="ed-top">
+     <button onclick="closeEditor()" style="background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:12px;padding:9px 13px;font-weight:800">✕</button>
+     <button onclick="saveDraft()" style="background:rgba(255,255,255,.92);color:#000;border:none;border-radius:12px;padding:9px 15px;font-weight:800">💾 Bozza</button>
+   </div>
+   <div class="ed-tools">
+     <button onclick="addOverlay()"><span>🅰️</span><small>Testo</small></button>
+     <button onclick="pickMusic()"><span>🎵</span><small>Musica</small></button>
+     <button onclick="toggleVoice()"><span>🎙️</span><small id="voice-lbl">Doppia</small></button>
+     <button onclick="toggleMute()"><span>${st.muteOriginal?'🔇':'🔊'}</span><small>Audio</small></button>
+   </div>
+   <div class="ed-bottom">
+     <div class="sub" style="color:#9aa">${st.music?('🎵 '+(st.music.name||st.music.preset)):'Nessuna musica'}${st.voiceover?' · 🎙️ doppiaggio':''}${st.overlays.length?' · ✍️ '+st.overlays.length+' scritte':''}</div>
+     <input id="ed-cap" placeholder="Aggiungi una descrizione..." value="${(st.caption||'').replace(/"/g,'&quot;')}">
+     <button class="btn" onclick="publishEdited()">Pubblica</button>
+   </div>`;
+  startBg();
+}
+function addOverlay(){ const t=prompt('Testo da scrivere sul video:'); if(!t||!t.trim())return; _editState.overlays.push({text:t.trim(),top:'45%',color:'#fff',size:24}); renderEditor(); toast('Tocca la scritta per spostarla o modificarla'); }
+function editOverlay(i){ const o=_editState.overlays[i]; if(!o)return; const t=prompt('Modifica testo (lascia vuoto per eliminare):',o.text); if(t===null)return; if(!t.trim()){_editState.overlays.splice(i,1);renderEditor();return;} o.text=t.trim(); const pos=['12%','45%','78%']; o.top=pos[(pos.indexOf(o.top)+1)%3]; const cols=['#fff','#ffd166','#ff6f8b','#1fae7e']; o.color=cols[(cols.indexOf(o.color)+1)%4]; renderEditor(); toast('Posizione e colore aggiornati'); }
+function toggleMute(){ _editState.muteOriginal=!_editState.muteOriginal; renderEditor(); }
+function pickMusic(){
+  const c=prompt('Musica: 1=Chill · 2=Upbeat · 3=Lo-fi · 0=carica un tuo audio (vuoto=togli)','1');
+  if(c===null)return;
+  if(c===''){ _editState.music=null; renderEditor(); return; }
+  if(c==='0'){ fileFallback((url,file)=>{ _editState.music={src:url,name:(file&&file.name)||'audio'}; renderEditor(); toast('Musica aggiunta'); },'audio/*'); return; }
+  _editState.music={preset:({'1':'Chill','2':'Upbeat','3':'Lo-fi'}[c]||'Chill')}; renderEditor(); toast('Musica: '+_editState.music.preset);
+}
+async function toggleVoice(){
+  if(_voiceRec&&_voiceRec.state==='recording'){ _voiceRec.stop(); return; }
+  if(!navigator.mediaDevices||!window.MediaRecorder){ toast('Registrazione audio non supportata'); return; }
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    _voiceChunks=[]; _voiceRec=new MediaRecorder(stream);
+    _voiceRec.ondataavailable=ev=>{ if(ev.data.size)_voiceChunks.push(ev.data); };
+    _voiceRec.onstop=()=>{ const blob=new Blob(_voiceChunks,{type:'audio/webm'}); const rd=new FileReader(); rd.onload=()=>{ _editState.voiceover=rd.result; renderEditor(); toast('Doppiaggio registrato 🎙️'); }; rd.readAsDataURL(blob); stream.getTracks().forEach(t=>t.stop()); };
+    _voiceRec.start(); const l=document.getElementById('voice-lbl'); if(l)l.textContent='Stop'; toast('Registrazione doppiaggio… ritocca 🎙️ per fermare');
+  }catch(e){ toast('Permesso microfono negato'); }
+}
+function startBg(){ stopBg(); const m=_editState&&_editState.music; if(!m)return;
+  if(m.src){ try{_bgAudio=new Audio(m.src);_bgAudio.loop=true;_bgAudio.volume=0.6;_bgAudio.play().catch(()=>{});}catch(e){} return; }
+  if(m.preset) playPreset(m.preset);
+}
+function stopBg(){ if(_bgAudio){try{_bgAudio.pause();}catch(e){}_bgAudio=null;} if(_bgCtx){try{clearTimeout(_bgCtx._t);_bgCtx.close();}catch(e){}_bgCtx=null;} }
+function playPreset(name){ try{ const AC=window.AudioContext||window.webkitAudioContext; if(!AC)return; _bgCtx=new AC();
+  const seq={'Chill':[261,329,392,329],'Upbeat':[392,494,587,494],'Lo-fi':[220,262,196,262]}[name]||[261,329,392]; let i=0;
+  const g0=_bgCtx.createGain(); g0.gain.value=0.05; g0.connect(_bgCtx.destination);
+  function tick(){ if(!_bgCtx)return; const o=_bgCtx.createOscillator(); o.type='sine'; o.frequency.value=seq[i%seq.length];
+    const g=_bgCtx.createGain(); g.gain.setValueAtTime(0.0001,_bgCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.6,_bgCtx.currentTime+0.05); g.gain.exponentialRampToValueAtTime(0.0001,_bgCtx.currentTime+0.45);
+    o.connect(g); g.connect(g0); o.start(); o.stop(_bgCtx.currentTime+0.5); i++; _bgCtx._t=setTimeout(tick,480); } tick();
+}catch(e){} }
+async function saveDraft(){
+  _editState.caption=(document.getElementById('ed-cap')||{}).value||_editState.caption; _editState.src=_editSrc;
+  if(cloudOn()&&loggedIn()){
+    toast('Salvataggio bozza nel cloud…');
+    try{ _editState.cloudId=await cloudSaveDraft(_editState,_editFile); toast('Bozza salvata nel cloud ✓'); }
+    catch(e){ toast('Errore cloud: salvata solo su questo dispositivo'); const i=DRAFTS.findIndex(d=>d.id===_editState.id); if(i>=0)DRAFTS[i]=_editState; else DRAFTS.unshift(_editState); }
+  } else {
+    const i=DRAFTS.findIndex(d=>d.id===_editState.id); if(i>=0)DRAFTS[i]=_editState; else DRAFTS.unshift(_editState);
+  }
+  closeEditor(); go('community'); comTab('bozze'); toast('Bozza salvata (visibile solo a te)');
+}
+async function publishEdited(){
+  const cap=((document.getElementById('ed-cap')||{}).value||'').trim()||'Il mio short'; _editState.caption=cap;
+  if(cloudOn()&&loggedIn()){
+    toast('Pubblicazione nel cloud…');
+    try{ await cloudPublishEdit(_editState,_editFile); if(_editState.cloudId){ /* draft già rimossa */ } closeEditor(); go('community'); comTab('perte'); toast('Short pubblicato online! 🎬'); return; }
+    catch(e){ toast('Errore cloud: '+(e.message||e)); }
+  }
+  MYSHORTS.unshift({id:'my'+_editState.id,user:(S.user.name||'io'),me:true,src:_editSrc,caption:cap,type:_editState.type,overlays:_editState.overlays,music:_editState.music,voiceover:_editState.voiceover,muteOriginal:_editState.muteOriginal,diet:S.diet,goal:S.user.goal,likes:0,liked:false});
+  DRAFTS=DRAFTS.filter(d=>d.id!==_editState.id);
+  closeEditor(); go('community'); comTab('perte'); toast('Short pubblicato! 🎬');
+}
+function myShortCard(s){
+  return `<div class="short" data-my="${s.id}">
+    <video src="${s.src}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" playsinline loop ${s.muteOriginal?'muted':''} controls preload="metadata"></video>
+    ${(s.overlays||[]).map(o=>`<div style="position:absolute;left:50%;top:${o.top};transform:translateX(-50%);color:${o.color||'#fff'};font-weight:800;font-size:${o.size||24}px;text-shadow:0 2px 10px rgba(0,0,0,.8);text-align:center;max-width:88%">${o.text}</div>`).join('')}
+    ${s.voiceover?`<audio src="${s.voiceover}" loop></audio>`:''}
+    <div class="grad"></div>
+    <div class="badge">🎬 Tuo${s.music?' · 🎵 '+(s.music.name||s.music.preset):''}</div>
+    <div class="rail">
+      <button onclick="toast('❤️')"><span>🤍</span><span class="cnt">${fmt(s.likes||0)}</span></button>
+      <button onclick="toast('Commenti')"><span>💬</span><span class="cnt">0</span></button>
+    </div>
+    <div class="info"><div class="uname">@${s.user}</div><div class="cap">${(s.caption||'').replace(/</g,'&lt;')}</div></div>
+  </div>`;
+}
+function draftCard(d){
+  return `<div class="card">
+    <div style="display:flex;gap:12px">
+      <div style="width:80px;height:110px;flex:0 0 80px;border-radius:12px;overflow:hidden;background:#000;position:relative">
+        <video src="${d.src}" style="width:100%;height:100%;object-fit:cover" muted preload="metadata"></video>
+      </div>
+      <div style="flex:1;min-width:0">
+        <b style="font-size:14px">${(d.caption||'(senza descrizione)')}</b>
+        <div class="sub" style="margin-top:4px">${d.overlays.length} scritte${d.music?' · 🎵':''}${d.voiceover?' · 🎙️':''}</div>
+        <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+          <button class="btn sm" style="width:auto;padding:8px 12px" onclick="reopenDraft(${d.id})">✏️ Modifica</button>
+          <button class="btn sm sec" style="width:auto;padding:8px 12px" onclick="publishDraft(${d.id})">Pubblica</button>
+          <button class="btn sm sec" style="width:auto;padding:8px 10px;color:var(--coral)" onclick="deleteDraft(${d.id})">🗑</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+let CLOUD_DRAFTS=[];
+function findDraft(id){ return DRAFTS.find(x=>x.id===id) || CLOUD_DRAFTS.find(x=>x.id===id); }
+function reopenDraft(id){ const d=findDraft(id); if(d)openEditor(d.src,null,d); }
+function publishDraft(id){ const d=findDraft(id); if(!d)return; openEditor(d.src,null,d); setTimeout(()=>publishEdited(),60); }
+function deleteDraft(id){ const d=findDraft(id); if(d&&d.cloudId){ cloudDeleteDraft(d.cloudId); CLOUD_DRAFTS=CLOUD_DRAFTS.filter(x=>x.id!==id); } else { DRAFTS=DRAFTS.filter(x=>x.id!==id); } renderComBody('bozze'); toast('Bozza eliminata'); }
 function shortById(id){return SHORTS.find(x=>x.id===id);}
 function likeShort(id,btn){const s=shortById(id);if(!s)return;s.liked=!s.liked;s.likes+=s.liked?1:-1;btn.innerHTML=`<span>${s.liked?'❤️':'🤍'}</span><span class="cnt">${fmt(s.likes)}</span>`;save();}
 function saveShort(id,btn){const s=shortById(id);if(!s)return;s.saved=!s.saved;s.saves+=s.saved?1:-1;btn.innerHTML=`<span>${s.saved?'🔖':'🏷️'}</span><span class="cnt">${fmt(s.saves)}</span>`;save();toast(s.saved?'Salvato nei preferiti':'Rimosso');}
@@ -2068,8 +2438,8 @@ function recuperoHTML(){
 
   <div class="card">
     <div class="h">Come ti senti?</div>
-    <div class="chips">${["In colpa","Delusa","Frustrata","Serena","Va meglio"].map(t=>`<button class="chip violet" onclick="segSelect(this)">${t}</button>`).join('')}</div>
-    <div class="sub" style="margin-top:10px">Qualunque cosa provi, è legittima. Ora vediamo insieme come ripartire, senza stress.</div>
+    <div class="chips">${["Triste","In colpa","Ansiosa","Frustrata","Serena"].map(t=>`<button class="chip violet" onclick="recMood('${t}',this)">${t}</button>`).join('')}</div>
+    <div id="rec-response"><div class="sub" style="margin-top:10px">Tocca come ti senti: adatterò supporto, piano e consigli di conseguenza.</div></div>
   </div>
 
   <div class="card">
@@ -2099,6 +2469,45 @@ function recoverStart(){
   save();
   toast('Bravo, si riparte! Un passo alla volta 💚');
   go('home');
+}
+const REC_MOODS={
+  "Triste":{ph:"Va bene sentirsi tristi: non devi risolvere tutto adesso. Un respiro, un bicchiere d'acqua, un passo alla volta. 💙",acts:["respira","psicologo","integratori"],supp:"mood"},
+  "In colpa":{ph:"Un pasto in più non cancella settimane di impegno. Sei una persona, non una macchina. Nessuna punizione: si riparte dal prossimo pasto.",acts:["riadatta","integratori","respira"],supp:"peso"},
+  "Ansiosa":{ph:"L'ansia passa come un'onda. Rallenta il respiro: 4 secondi dentro, 7 trattieni, 8 fuori. Ci sono cose che possono aiutarti.",acts:["respira","integratori","psicologo"],supp:"mood"},
+  "Frustrata":{ph:"La frustrazione è energia: incanaliamola in un piccolo passo utile, non in una punizione. Un allenamento leggero fa miracoli.",acts:["riadatta","allenati","respira"],supp:"peso"},
+  "Serena":{ph:"Che bello! Goditi questa leggerezza e continua col tuo ritmo. Sei sulla strada giusta 🌿",acts:["allenati"],supp:null}
+};
+function recMood(mood,btn){
+  const p=btn.parentNode; p.querySelectorAll('.chip').forEach(b=>b.classList.remove('sel')); btn.classList.add('sel');
+  const m=REC_MOODS[mood]; if(!m)return;
+  const A={
+    riadatta:`<button class="btn sm" onclick="riadattaPiano()">🍽️ Riadatta il piano dopo lo sgarro</button>`,
+    integratori:`<button class="btn sm sec" onclick="go('shop')">💊 Integratori che aiutano</button>`,
+    respira:`<button class="btn sm sec" onclick="recBreathe()">🌬️ Respirazione guidata</button>`,
+    psicologo:`<button class="btn sm sec" onclick="book('Dr.ssa Fontana','Psicologa','🧠','Lun 21 lug · 17:00')">🧠 Parla con la psicologa</button>`,
+    allenati:`<button class="btn sm sec" onclick="go('allenamento')">🏋️ Allenamento leggero</button>`
+  };
+  const r=document.getElementById('rec-response');
+  r.innerHTML=`<div class="alert ok" style="margin:12px 0"><span>💚</span><div>${m.ph}</div></div>
+    <div style="display:flex;flex-direction:column;gap:8px">${m.acts.map(a=>A[a]).join('')}</div>
+    <div id="rec-breath"></div>
+    ${m.supp?suppRecoCard('Integratori utili adesso','Selezionati per come ti senti:',m.supp):''}`;
+  S.journal.unshift({d:"Oggi",mood:"💭",txt:"Recupero: mi sento "+mood.toLowerCase()+"."}); save();
+}
+function riadattaPiano(){
+  S.recovery=true;
+  // giornata più leggera: -10% calorie di oggi (entro il limite) e opzioni rigenerate
+  const wp=weightPlan(); S.kcalCustom=Math.max(wp.loLim, Math.round(wp.baseKcal*0.92/10)*10);
+  S.mealOffset={}; S.planChoices={}; save();
+  toast('Piano riadattato: giornata più leggera e digestiva 🌿');
+  rebuild('piano'); go('piano');
+}
+function recBreathe(){
+  const box=document.getElementById('rec-breath'); if(!box)return;
+  box.innerHTML=`<div style="text-align:center;padding:16px 0"><div id="rb-ball" style="width:84px;height:84px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#7ed9c0,var(--green));margin:0 auto;transition:transform 4s ease;box-shadow:0 10px 30px rgba(31,174,126,.4)"></div><div id="rb-txt" style="margin-top:12px;font-weight:800">Inspira…</div></div>`;
+  const ball=document.getElementById('rb-ball'),t=document.getElementById('rb-txt'); let step=0; const seq=[["Inspira…",1.6,4000],["Trattieni…",1.6,3000],["Espira…",0.7,4000]];
+  function run(){const[l,s,ms]=seq[step%3];if(!document.getElementById('rb-txt'))return;t.textContent=l;ball.style.transform='scale('+s+')';step++;box._t=setTimeout(run,ms);}
+  clearTimeout(box._t);run(); setTimeout(()=>{clearTimeout(box._t);if(document.getElementById('rb-txt'))t.textContent='Bravo. Come ti senti ora? 💚';},13000);
 }
 
 /* ---------- DETOX ---------- */
@@ -2282,6 +2691,7 @@ function healthBanner(){
   if((h.patologie||[]).length) parts.push(h.patologie.join(', ').toLowerCase());
   if(h.gravidanza) parts.push('gravidanza/allattamento');
   const tags=[];
+  if(S.cravings) tags.push('🍫 Voglie: '+S.cravings.toLowerCase());
   if(S.detox) tags.push('🥤 Detox giorno '+S.detox.day+'/'+S.detox.days);
   if(S.fasting) tags.push('⏳ Digiuno '+S.fasting.proto+(S.fasting.proto!=='5:2'?' ('+S.fasting.start+'–'+S.fasting.end+')':''));
   if(!parts.length && !tags.length) return '';
@@ -2307,6 +2717,36 @@ const PROFS=[
   {v:"Estetista",ic:"💆",ente:"Qualifica professionale regionale",albo:false}
 ];
 function profByName(v){return PROFS.find(p=>p.v===v)||PROFS[0];}
+const ITA_UNI={
+  "Abruzzo":["Università di L'Aquila","Università di Chieti-Pescara \"G. d'Annunzio\"","Università di Teramo"],
+  "Basilicata":["Università della Basilicata"],
+  "Calabria":["Università della Calabria","Università Magna Græcia di Catanzaro","Università Mediterranea di Reggio Calabria"],
+  "Campania":["Università di Napoli Federico II","Università della Campania \"L. Vanvitelli\"","Università di Napoli \"Parthenope\"","Università di Salerno","Università del Sannio","Università \"L'Orientale\" Napoli"],
+  "Emilia-Romagna":["Università di Bologna","Università di Modena e Reggio Emilia","Università di Parma","Università di Ferrara"],
+  "Friuli-Venezia Giulia":["Università di Trieste","Università di Udine"],
+  "Lazio":["Sapienza Università di Roma","Università di Roma \"Tor Vergata\"","Università Roma Tre","Università Cattolica (Roma)","Università Campus Bio-Medico","LUISS","Università della Tuscia (Viterbo)","Università di Cassino"],
+  "Liguria":["Università di Genova"],
+  "Lombardia":["Università di Milano (Statale)","Università Milano-Bicocca","Politecnico di Milano","Università Bocconi","Università Cattolica (Milano)","Humanitas University","Università di Pavia","Università di Bergamo","Università di Brescia","Università dell'Insubria"],
+  "Marche":["Università Politecnica delle Marche","Università di Macerata","Università di Camerino","Università di Urbino"],
+  "Molise":["Università del Molise"],
+  "Piemonte":["Università di Torino","Politecnico di Torino","Università del Piemonte Orientale"],
+  "Puglia":["Università di Bari \"Aldo Moro\"","Politecnico di Bari","Università del Salento (Lecce)","Università di Foggia"],
+  "Sardegna":["Università di Cagliari","Università di Sassari"],
+  "Sicilia":["Università di Palermo","Università di Catania","Università di Messina","Università \"Kore\" di Enna"],
+  "Toscana":["Università di Firenze","Università di Pisa","Università di Siena","Scuola Normale Superiore","Sant'Anna Pisa"],
+  "Trentino-Alto Adige":["Università di Trento","Libera Università di Bolzano"],
+  "Umbria":["Università di Perugia","Università per Stranieri di Perugia"],
+  "Valle d'Aosta":["Università della Valle d'Aosta"],
+  "Veneto":["Università di Padova","Università Ca' Foscari Venezia","Università di Verona","IUAV Venezia"]
+};
+const REGIONS=Object.keys(ITA_UNI);
+function proUniUpdate(){
+  const reg=document.getElementById('pro-reg').value;
+  const sel=document.getElementById('pro-uni');
+  const list=ITA_UNI[reg]||[];
+  sel.innerHTML=(list.length?list:[]).map(u=>`<option>${u}</option>`).join('')+'<option>Altra università</option>';
+  if(!list.length) sel.innerHTML='<option>Scegli prima la regione</option>';
+}
 function proHTML(){
   if(S.pro) return proStatusHTML();
   const first=PROFS[0];
@@ -2317,15 +2757,16 @@ function proHTML(){
     <div class="field"><label>Professione</label><select id="pro-prof" onchange="proEnteUpdate()">${PROFS.map(p=>`<option>${p.v}</option>`).join('')}</select></div>
     <div class="field"><label>Nome e cognome professionale</label><input id="pro-name" value="${(S.user.name||'').replace(/"/g,'&quot;')}"></div>
     <div class="field"><label>Titolo di studio</label><input id="pro-title" placeholder="es. Laurea Magistrale in Biologia della Nutrizione"></div>
-    <div class="grid2"><div class="field"><label>Università</label><input id="pro-uni" placeholder="es. Sapienza Roma"></div><div class="field"><label>Anno di laurea</label><input id="pro-year" type="number" inputmode="numeric" placeholder="es. 2016"></div></div>
+    <div class="field"><label>Regione in cui ti sei laureato</label><select id="pro-reg" onchange="proUniUpdate()"><option value="">— seleziona —</option>${REGIONS.map(r=>`<option>${r}</option>`).join('')}</select></div>
+    <div class="grid2"><div class="field"><label>Università</label><select id="pro-uni"><option>Scegli prima la regione</option></select></div><div class="field"><label>Anno di laurea</label><input id="pro-year" type="number" inputmode="numeric" placeholder="es. 2016"></div></div>
     <div class="field"><label>Ente / Albo di riferimento</label><input id="pro-ente" readonly value="${first.ente}"></div>
-    <div class="grid2"><div class="field"><label id="pro-albo-lbl">N. iscrizione albo</label><input id="pro-albo" inputmode="numeric" placeholder="es. 123456"></div><div class="field"><label>Regione / Provincia</label><input id="pro-reg" placeholder="es. Lazio"></div></div>
+    <div class="field"><label id="pro-albo-lbl">N. iscrizione albo</label><input id="pro-albo" inputmode="numeric" placeholder="es. 123456"></div>
     <div class="field"><label>Tariffa a visita</label><input id="pro-price" placeholder="es. €60"></div>
     <div class="field"><label>Presentazione (bio)</label><textarea id="pro-bio" rows="2" style="width:100%;border:1px solid var(--line);border-radius:13px;padding:12px;font-family:inherit;font-size:14px;outline:none;resize:none" placeholder="Esperienza, specializzazioni..."></textarea></div>
     <div class="card tight" style="border:1.5px dashed var(--green);box-shadow:none;background:var(--mint)">
       <div class="h" style="font-size:14px">📎 Titoli e certificazioni</div>
       <div id="pro-cert-status" class="sub">Nessun documento caricato. Carica laurea/abilitazione/iscrizione all'albo.</div>
-      <div class="grid2" style="margin-top:10px"><button class="btn sm sec" onclick="uploadCert()">📷 Fotografa</button><button class="btn sm sec" onclick="fileFallback(setCert)">🖼️ Da file</button></div>
+      <div class="grid2" style="margin-top:10px"><button class="btn sm sec" onclick="uploadCert()">📷 Fotografa</button><button class="btn sm sec" onclick="fileFallback(setCert,'image/*,application/pdf')">📁 Scegli file (foto o PDF)</button></div>
     </div>
     <button class="btn" style="margin-top:14px" onclick="submitPro()">Invia per la verifica</button>
     <div class="tiny">Inviando dichiari che i dati sono veri e verificabili. Le credenziali false comportano l'esclusione. La validazione definitiva avviene con l'ente competente (albo/ordine).</div>
@@ -2334,7 +2775,9 @@ function proHTML(){
 let _proCert=null;
 function proEnteUpdate(){const v=document.getElementById('pro-prof').value;const p=profByName(v);document.getElementById('pro-ente').value=p.ente;const al=document.getElementById('pro-albo');const lbl=document.getElementById('pro-albo-lbl');if(p.albo){al.disabled=false;al.placeholder='es. 123456';lbl.textContent='N. iscrizione albo (obbligatorio)';}else{al.disabled=false;al.placeholder='se disponibile';lbl.textContent='N. iscrizione / matricola (facoltativo)';}}
 function uploadCert(){capturePhoto(setCert,'Inquadra il titolo / certificato');}
-function setCert(url){_proCert=url;const el=document.getElementById('pro-cert-status');if(el)el.innerHTML='✅ Documento caricato correttamente'+(url?`<br><img src="${url}" style="max-height:90px;border-radius:10px;margin-top:8px">`:'');}
+function setCert(url,file){_proCert=url;const el=document.getElementById('pro-cert-status');if(!el)return;
+  const isPdf=(url||'').startsWith('data:application/pdf')||(file&&/pdf$/i.test(file.name||''));
+  el.innerHTML='✅ Documento caricato'+(isPdf?` <br>📄 ${(file&&file.name)||'documento.pdf'}`:(url?`<br><img src="${url}" style="max-height:90px;border-radius:10px;margin-top:8px">`:''));}
 function submitPro(){
   const prof=document.getElementById('pro-prof').value;
   const p=profByName(prof);
@@ -2443,7 +2886,7 @@ function cloudHTML(){
   <div class="alert ok"><span>✅</span><div><b>Sei online come ${cloudUser.email}.</b> I tuoi dati sono salvati nel cloud e sincronizzati tra i dispositivi. Ora puoi caricare video reali nella Community.</div></div>
   <div class="card">
     <div class="row"><div class="ri" style="background:var(--mint)">📧</div><div class="rt"><b>${cloudUser.email}</b><small>account cloud</small></div></div>
-    <div class="row"><div class="ri" style="background:var(--mint)">🔄</div><div class="rt"><b>Sincronizzazione</b><small>attiva automaticamente</small></div><div class="rv" style="color:var(--green-d)">ON</div></div>
+    <div class="tog"><div class="ri" style="width:42px;height:42px;flex:0 0 42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px;background:var(--mint)">🔄</div><div class="tt"><b>Sincronizzazione</b><small>salva i dati nel cloud automaticamente</small></div><div class="switch ${S.syncOn!==false?'on':''}" onclick="toggleSync(this)"><i></i></div></div>
   </div>
   <button class="btn sec" onclick="doSignOut()">Esci dall'account</button>`;
 }
@@ -2473,7 +2916,45 @@ async function doSignIn(){
   try{ await cloudSignIn(e,p); rebuildAll(); go('home'); toast('Bentornata '+(S.user.name||'')+'! ☁️'); }
   catch(err){ toast('Accesso fallito: '+(err.message||err)); }
 }
-async function doSignOut(){ await cloudSignOut(); rebuild('cloud'); go('cloud'); toast('Uscita effettuata'); }
+async function doSignOut(){ await cloudSignOut(); rebuild('cloud'); go('cloud'); showAuthWall(); toast('Uscita effettuata'); }
+/* schermata iniziale: accedi / registrati */
+function showAuthWall(){authTab('login');const e=document.getElementById('authwall');if(e)e.style.display='flex';}
+function hideAuthWall(){const e=document.getElementById('authwall');if(e)e.style.display='none';}
+function authTab(mode,btn){
+  const segs=document.querySelectorAll('#auth-seg button'); segs.forEach(b=>b.classList.remove('on'));
+  if(btn)btn.classList.add('on'); else if(segs[mode==='login'?0:1]) segs[mode==='login'?0:1].classList.add('on');
+  const f=document.getElementById('auth-forms'); if(!f)return;
+  if(mode==='login'){
+    f.innerHTML=`<div class="field"><label>Email</label><input id="aw-email" type="email" placeholder="tuamail@esempio.com"></div>
+      <div class="field"><label>Password</label><input id="aw-pass" type="password" placeholder="password"></div>
+      <button class="btn" onclick="authLogin()">Accedi</button>
+      <div class="tiny" style="margin-top:10px">Nuovo utente? Tocca "Registrati" qui sopra.</div>`;
+  } else {
+    f.innerHTML=`<div class="field"><label>Nome</label><input id="aw-name" placeholder="Il tuo nome"></div>
+      <div class="field"><label>Email</label><input id="aw-email" type="email" placeholder="tuamail@esempio.com"></div>
+      <div class="field"><label>Password</label><input id="aw-pass" type="password" placeholder="min 6 caratteri"></div>
+      <button class="btn" onclick="authRegister()">Registrati</button>
+      <div class="tiny" style="margin-top:10px">Ti invieremo un'email di verifica: confermala, poi torna qui e accedi.</div>`;
+  }
+}
+async function authLogin(){
+  if(!cloudOn()){toast('Attiva prima il cloud in Menu → Cloud');return;}
+  const e=(document.getElementById('aw-email').value||'').trim(), p=document.getElementById('aw-pass').value||'';
+  if(!e||!p){toast('Inserisci email e password');return;}
+  toast('Accesso…');
+  try{ await cloudSignIn(e,p); hideAuthWall(); rebuildAll(); if(!S.setup){showOnboard();}else{go('home');} toast('Bentornata!'); }
+  catch(err){ toast(/confirm|not confirmed/i.test(err.message||'')?'Prima verifica l\'email che ti abbiamo inviato':'Accesso fallito: '+(err.message||err)); }
+}
+async function authRegister(){
+  if(!cloudOn()){toast('Attiva prima il cloud in Menu → Cloud');return;}
+  const n=(document.getElementById('aw-name').value||'').trim();
+  const e=(document.getElementById('aw-email').value||'').trim(), p=document.getElementById('aw-pass').value||'';
+  if(!e||p.length<6){toast('Email valida e password di almeno 6 caratteri');return;}
+  toast('Creazione account…');
+  try{ await cloudSignUp(e,p); if(n)S.user.name=n;
+    document.getElementById('auth-forms').innerHTML=`<div class="alert ok" style="margin:0"><span>📧</span><div><b>Email di verifica inviata a ${e}.</b> Apri la mail, premi il link di conferma, poi torna qui e tocca "Accedi".</div></div><button class="btn" style="margin-top:14px" onclick="authTab('login')">Vai al login</button>`;
+  }catch(err){ toast('Errore: '+(err.message||err)); }
+}
 
 /* ============ BUILD ============ */
 const BUILDERS={
@@ -2505,8 +2986,11 @@ function boot(){
   Object.keys(BUILDERS).forEach(afterRender);
   go('home');
   save();
-  if(!S.setup) showOnboard();
-  if(cloudOn()){ cloudCheckSession().then(u=>{ if(u){ hideOnboard(); rebuildAll(); go('home'); } }); }
+  if(S.stepsConnected){ try{ startPedometer(); }catch(e){} }
+  if(cloudOn()){
+    showAuthWall();
+    cloudCheckSession().then(u=>{ if(u){ hideAuthWall(); if(!S.setup){showOnboard();} else {rebuildAll();go('home');} } });
+  } else if(!S.setup){ showOnboard(); }
   // clock
   function tick(){const el=document.getElementById('clock');if(el)el.textContent=new Date().getHours()+':'+String(new Date().getMinutes()).padStart(2,'0');
     if(S.fasting && document.getElementById('sc-digiuno') && document.getElementById('sc-digiuno').classList.contains('active')) fastStatus();}
