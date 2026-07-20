@@ -2,7 +2,7 @@
   "name": "Auréa · Benessere & Estetica",
   "short_name": "Auréa",
   "description": "Nutrizione, estetica, salute femminile, planning e community in un'unica app.",
-  "start_url": "index.html",
+  "start_url": "app.html",
   "scope": ".",
   "display": "standalone",
   "orientation": "portrait",
