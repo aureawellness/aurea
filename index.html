@@ -532,7 +532,7 @@ function ring(pct,color,size=120,sw=13){
 }
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2200);try{save();}catch(e){}}
 let curScreen=null;
-const REFRESH_ON_SHOW=['home','piano','prenota','diario','digiuno','pro','profilo','detox','storia','benessere','allenamento','addfood','scanner','ciclo','planning'];
+const REFRESH_ON_SHOW=['home','piano','prenota','diario','digiuno','pro','profilo','detox','storia','benessere','allenamento','addfood','scanner','ciclo','planning','shop','admin','ordini','privacy'];
 function go(id){
   const changing = curScreen!==id;
   if(changing && REFRESH_ON_SHOW.includes(id) && BUILDERS[id] && document.getElementById('sc-'+id)){ rebuild(id); }
@@ -575,6 +575,48 @@ function cloudInit(){
 }
 function cloudOn(){ return !!SB; }
 function loggedIn(){ return !!cloudUser; }
+const OWNER_EMAIL="samuele@grenworld.com";
+const POLICY_VERSION="2026-07-01"; // aggiornare a ogni modifica di Termini/Privacy
+function isAdmin(){ return !!(cloudUser && (cloudUser.email||'').toLowerCase()===OWNER_EMAIL); }
+// registro consensi (tracciabilità GDPR)
+async function cloudLogConsent(kind,extra){ if(!cloudOn()||!cloudUser)return; try{ await SB.from('consents').insert({user_id:cloudUser.id,version:POLICY_VERSION,kind:kind,detail:extra||{},created_at:new Date().toISOString()}); }catch(e){} }
+// diritto alla portabilità: scarica tutti i tuoi dati in JSON
+function exportMyData(){
+  const dump={ exported_at:new Date().toISOString(), policy_version:POLICY_VERSION, account:cloudUser?{email:cloudUser.email,id:cloudUser.id}:null, consent:S.consent||null, data:minState() };
+  const blob=new Blob([JSON.stringify(dump,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='aurea-i-miei-dati.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(url),2000);
+  toast('Dati esportati in JSON');
+}
+// diritto di revoca del consenso ai dati sanitari
+function revokeHealthConsent(){
+  if(!confirm('Revocare il consenso al trattamento dei dati sulla salute? I piani e i consigli personalizzati verranno limitati.'))return;
+  S.consent=S.consent||{}; S.consent.health=false; S.consent.revokedAt=new Date().toISOString();
+  cloudLogConsent('health_revoked'); save(); toast('Consenso ai dati sanitari revocato'); rebuild('privacy'); go('privacy');
+}
+// diritto all'oblio: cancella account e dati
+async function deleteMyAccount(){
+  if(!confirm('Eliminare DEFINITIVAMENTE il tuo account e tutti i tuoi dati? L\'operazione è irreversibile.'))return;
+  if(cloudOn()&&loggedIn()){
+    toast('Cancellazione in corso…');
+    try{
+      const uid=cloudUser.id;
+      await SB.from('posts').delete().eq('user_id',uid).catch(()=>{});
+      await SB.from('drafts').delete().eq('user_id',uid).catch(()=>{});
+      await SB.from('products').delete().eq('owner_id',uid).catch(()=>{});
+      await SB.from('pros').delete().eq('id',uid).catch(()=>{});
+      await SB.from('consents').delete().eq('user_id',uid).catch(()=>{});
+      await SB.from('profiles').delete().eq('id',uid).catch(()=>{});
+      try{ await SB.functions.invoke('delete-account',{body:{}}); }catch(e){} // rimuove anche l'utente di autenticazione
+      await cloudSignOut();
+    }catch(e){ toast('Errore: '+(e.message||e)); }
+  }
+  try{ localStorage.removeItem('aurea_data'); }catch(e){}
+  toast('Account e dati eliminati'); setTimeout(()=>location.reload(),800);
+}
+function preloadCloud(){ if(!cloudOn())return;
+  cloudLoadProducts().then(()=>{ _prodLoaded=true; if(curScreen==='home')rebuild('home'); if(curScreen==='shop')rebuild('shop'); });
+  cloudLoadDocs().then(()=>{ _docsLoaded=true; if(curScreen==='prenota')renderDocs('Tutti'); });
+}
 async function cloudCheckSession(){ if(!cloudOn())return null; try{ const {data}=await SB.auth.getSession(); cloudUser=data&&data.session?data.session.user:null; if(cloudUser) await cloudLoadProfile(); }catch(e){} return cloudUser; }
 async function cloudSignUp(email,pass){
   const {data,error}=await SB.auth.signUp({email,password:pass}); if(error) throw error;
@@ -594,6 +636,10 @@ async function cloudSaveProfile(){
     is_pro:!!S.pro, pro_status:S.pro?S.pro.status:null, profession:S.pro?S.pro.profession:null,
     data:S, updated_at:new Date().toISOString()
   }); }catch(e){}
+  // scheda PUBBLICA del professionista (senza dati sanitari privati)
+  try{
+    if(S.pro){ await SB.from('pros').upsert({ id:cloudUser.id, name:S.pro.name||S.user.name, profession:S.pro.profession||'', ic:S.pro.ic||'👤', price:S.pro.price||'€—', ente:S.pro.ente||'', followers:S.pro.followers||0, modes:['Online','In studio'], avail:S.pro.avail||[], recommends:S.pro.recommends||[], status:S.pro.status||'in_verifica', updated_at:new Date().toISOString() }); }
+  }catch(e){}
 }
 async function cloudLoadProfile(){
   if(!cloudOn()||!cloudUser)return;
@@ -1651,18 +1697,14 @@ function cicloHTML(){
 function segSelect(btn){const p=btn.parentNode;p.querySelectorAll('.chip').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');}
 
 /* ---------- PRENOTA ---------- */
-const DOCTORS=[
-  {n:"Dr.ssa Bianchi",s:"Nutrizionista",ic:"🥗",r:"4.9",p:"€60",tags:["Video","In studio"],when:"Prima disp. domani",v:true,f:3420,nr:128,ente:"Ordine Nazionale dei Biologi"},
-  {n:"Dr. Ferrari",s:"Medico estetico",ic:"✨",r:"4.8",p:"€90",tags:["In studio"],when:"Gio 24 lug",v:true,f:5100,nr:96,ente:"Ordine dei Medici (OMCeO)"},
-  {n:"Dr.ssa Greco",s:"Diabetologo",ic:"🩸",r:"5.0",p:"€75",tags:["Video","In studio"],when:"Lun 21 lug",v:true,f:2110,nr:74,ente:"Ordine dei Medici (OMCeO)"},
-  {n:"Dr. Russo",s:"Dermatologo estetico",ic:"🧴",r:"4.7",p:"€85",tags:["In studio"],when:"Mer 23 lug",v:true,f:1890,nr:58,ente:"Ordine dei Medici (OMCeO)"},
-  {n:"Dr.ssa Costa",s:"Endocrinologo",ic:"⚕️",r:"4.9",p:"€100",tags:["Video"],when:"Ven 25 lug",v:true,f:2760,nr:81,ente:"Ordine dei Medici (OMCeO)"},
-  {n:"Dr.ssa Marino",s:"Ginecologo",ic:"🌸",r:"4.9",p:"€80",tags:["Video","In studio"],when:"Mar 22 lug",v:true,f:4300,nr:112,ente:"Ordine dei Medici (OMCeO)"},
-  {n:"Est. Lombardi",s:"Estetista · trattamenti viso",ic:"💆",r:"4.8",p:"€45",tags:["In studio"],when:"Oggi 18:00",v:true,f:980,nr:44,ente:"Qualifica professionale regionale"},
-  {n:"Dr. Conti",s:"Personal trainer",ic:"🏋️",r:"4.8",p:"€40",tags:["Video","In palestra"],when:"Domani 7:00",v:true,f:6200,nr:150,ente:"Laurea Scienze Motorie · CONI"},
-  {n:"Dr.ssa Fontana",s:"Psicologa · supporto emotivo",ic:"🧠",r:"5.0",p:"€70",tags:["Video","In studio"],when:"Lun 21 lug",v:true,f:3050,nr:89,ente:"Ordine degli Psicologi"},
-  {n:"Dr.ssa Vitale",s:"Psiconutrizionista",ic:"💚",r:"4.9",p:"€65",tags:["Video"],when:"Mer 23 lug",v:true,f:1520,nr:37,ente:"Ordine dei Biologi + Psicologi"}
-];
+// Professionisti REALI: partono vuoti, si popolano dal cloud (chi si registra e viene verificato)
+const DOCTORS=[];
+let CLOUD_DOCS=[], _docsLoaded=false, _docsFetching=false;
+async function cloudLoadDocs(){ if(!cloudOn()){CLOUD_DOCS=[];return [];}
+  try{ const {data,error}=await SB.from('pros').select('*').eq('status','verificato'); if(error)throw error;
+    CLOUD_DOCS=(data||[]).map(r=>({id:r.id,n:r.name||'Professionista',s:r.profession||'',ic:r.ic||'👤',r:'5.0',p:r.price||'€—',tags:r.modes||['Online','In studio'],when:'Disponibile',v:true,f:r.followers||0,nr:0,ente:r.ente||'',cloud:true,avail:r.avail||[],recommends:r.recommends||[]}));
+    return CLOUD_DOCS; }catch(e){ return CLOUD_DOCS; } }
+async function cloudLoadAllPros(){ if(!cloudOn())return []; try{ const {data,error}=await SB.from('pros').select('*').order('updated_at',{ascending:false}); if(error)throw error; return data||[]; }catch(e){ return []; } }
 function docReviews(name){return (S.docReviews&&S.docReviews[name])||[];}
 function docRating(d){const ur=docReviews(d.n);const base=parseFloat(d.r)||5;if(!ur.length)return base.toFixed(1);const sum=base*d.nr+ur.reduce((a,b)=>a+b.stars,0);return (sum/(d.nr+ur.length)).toFixed(1);}
 function docReviewCount(d){return d.nr+docReviews(d.n).length;}
@@ -1675,6 +1717,8 @@ function prenotaHTML(){
   <div class="chips" style="margin-bottom:16px;overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px" id="spec-filter">
     ${SPECS.map((s,i)=>`<button class="chip ${i===0?'sel':''}" style="white-space:nowrap" onclick="filterDocs('${s}',this)">${s}</button>`).join('')}
   </div>
+
+  <div class="tiny" style="background:var(--coral-s);border-radius:10px;padding:8px 10px;margin-bottom:14px">⚖️ Auréa è un intermediario: i titoli sono dichiarati dai professionisti, che ne sono i soli responsabili. <a onclick="go('termini')" style="color:var(--green-d);font-weight:700;cursor:pointer">Dettagli →</a></div>
 
   <div class="section-title" style="margin-top:0">I tuoi appuntamenti</div>
   <div class="card tight" id="my-appts"></div>
@@ -1716,7 +1760,7 @@ function defaultAvail(name){
 }
 function docAvail(name){
   if(S.pro&&S.pro.name===name){ return (S.pro.avail&&S.pro.avail.length)?S.pro.avail:[]; }
-  return defaultAvail(name);
+  const d=allDocs().find(x=>x.n===name); return (d&&d.avail)||[];
 }
 function slotTaken(name,date,time){ return (S.booked||[]).includes(name+'|'+date+'|'+time); }
 function docModes(name){
@@ -1754,6 +1798,7 @@ function drawBooking(){
     <div class="sub" style="text-align:center;margin-bottom:14px">${bk.spec}</div>
     ${modeSel}
     ${body}
+    <div class="tiny" style="margin-top:12px;background:var(--coral-s);border-radius:10px;padding:8px 10px">⚖️ Auréa mette in contatto te e il professionista ma <b>non è responsabile</b> della prestazione né della veridicità dei titoli, di cui risponde il professionista stesso.</div>
     <button class="btn" style="margin-top:12px" onclick="closeBooking()">Chiudi</button>
   </div>`;
   box.onclick=(ev)=>{ if(ev.target===box)closeBooking(); };
@@ -1776,9 +1821,11 @@ function cancelAppt(i){ const a=S.appointments[i]; if(!a)return; if(!confirm('An
   freeSlot(a); S.appointments.splice(i,1); save(); renderMyAppts(); renderHomeAppts(); rebuild('home'); toast('Appuntamento annullato'); }
 function modifyAppt(i){ const a=S.appointments[i]; if(!a)return; freeSlot(a); const who=a.who,spec=a.spec,ic=a.ic; S.appointments.splice(i,1); save(); renderMyAppts(); renderHomeAppts(); openBooking(who,spec,ic); toast('Scegli un nuovo orario'); }
 function allDocs(){
-  let list=DOCTORS.slice();
+  let list=CLOUD_DOCS.slice();
   if(S.pro && S.pro.status==='verificato'){
-    list.unshift({n:S.pro.name,s:S.pro.profession,ic:S.pro.ic||'👤',r:'5.0',p:S.pro.price||'€—',tags:["Video"],when:"Tu · disponibile",v:true,f:(S.following?0:0)+ (S.pro.followers||0),nr:0,ente:S.pro.ente,me:true});
+    const meId=cloudUser&&cloudUser.id;
+    list=list.filter(d=>!(meId&&d.id===meId)); // evita doppioni con la mia scheda cloud
+    list.unshift({id:meId,n:S.pro.name,s:S.pro.profession,ic:S.pro.ic||'👤',r:'5.0',p:S.pro.price||'€—',tags:["Online","In studio"],when:"Tu · disponibile",v:true,f:(S.pro.followers||0),nr:0,ente:S.pro.ente,me:true,avail:S.pro.avail||[],recommends:S.pro.recommends||[]});
   }
   return list;
 }
@@ -1786,6 +1833,7 @@ function renderDocs(filter){
   const c=document.getElementById('doc-list'); if(!c)return;
   const base=allDocs();
   const list=(!filter||filter==='Tutti')?base:base.filter(d=>d.s.toLowerCase().includes(filter.toLowerCase()));
+  if(!list.length){ c.innerHTML=`<div class="card" style="text-align:center"><div style="font-size:44px">🩺</div><div class="h" style="justify-content:center">Nessun professionista ancora</div><div class="sub">Stiamo attivando i primi professionisti verificati. ${cloudOn()?'':'Attiva la modalità cloud per vederli.'} Sei un professionista? <a onclick="go('pro')" style="color:var(--green-d);font-weight:700;cursor:pointer">Registrati qui →</a></div></div>`; return; }
   c.innerHTML=list.map((d,i)=>`
     <div class="pro" style="flex-wrap:wrap">
       <div class="ph">${d.ic}</div>
@@ -1818,25 +1866,16 @@ function filterDocs(s,btn){document.querySelectorAll('#spec-filter .chip').forEa
 function book(n,s,ic,when){ openBooking(n,s,ic); }
 
 /* ---------- SHOP INTEGRATORI ---------- */
-const PRODUCTS=[
-  {n:"Omega-3 Ultra",d:"Salute cuore & pelle",p:24.90,ic:"🐟",bg:"#e8f1ff",tag:"Best seller"},
-  {n:"Vitamina D3+K2",d:"Ossa & immunità",p:18.50,ic:"☀️",bg:"#fff6e0",tag:""},
-  {n:"Magnesio + B6",d:"Crampi & sonno",p:15.90,ic:"🌙",bg:"var(--violet-s)",tag:""},
-  {n:"Ferro + Vit C",d:"Fase mestruale",p:16.90,ic:"🩸",bg:"var(--coral-s)",tag:"Per te"},
-  {n:"Collagene Beauty",d:"Pelle, capelli, unghie",p:29.90,ic:"✨",bg:"var(--coral-s)",tag:"Estetica"},
-  {n:"Proteine Whey",d:"Recupero muscolare",p:34.90,ic:"💪",bg:"var(--mint)",tag:""},
-  {n:"Probiotici",d:"Equilibrio intestinale",p:22.00,ic:"🦠",bg:"var(--mint)",tag:""},
-  {n:"Inositolo",d:"Equilibrio ormonale · PCOS",p:26.50,ic:"🌸",bg:"var(--coral-s)",tag:"Per te"},
-  {n:"Multivitaminico",d:"Completo giornaliero",p:19.90,ic:"💊",bg:"#e8f1ff",tag:""},
-  {n:"Creatina",d:"Forza & performance",p:21.90,ic:"⚡",bg:"var(--mint)",tag:"Sport"},
-  {n:"Zinco",d:"Pelle & difese",p:12.90,ic:"🔷",bg:"#e8f6ff",tag:""},
-  {n:"Ashwagandha",d:"Stress & equilibrio",p:23.50,ic:"🌿",bg:"var(--mint)",tag:""},
-  {n:"Vitamina C",d:"Antiossidante & difese",p:11.90,ic:"🍊",bg:"#fff6e0",tag:""},
-  {n:"Melatonina",d:"Sonno regolare",p:13.90,ic:"😴",bg:"var(--violet-s)",tag:"Sonno"},
-  {n:"Caffeina + L-teanina",d:"Focus & energia",p:17.90,ic:"☕",bg:"#fff0e0",tag:"Energia"},
-  {n:"Fibre + Psillio",d:"Regolarità intestinale",p:14.90,ic:"🌾",bg:"var(--mint)",tag:""}
-];
-function allProducts(){ return PRODUCTS.concat(S.customProducts||[]); }
+// Prodotti REALI: partono vuoti, si popolano dal cloud (inseriti dai creator verificati o dall'admin)
+const PRODUCTS=[];
+let CLOUD_PRODUCTS=[], _prodLoaded=false, _prodFetching=false;
+async function cloudLoadProducts(){ if(!cloudOn()){CLOUD_PRODUCTS=[];return [];}
+  try{ const {data,error}=await SB.from('products').select('*').order('created_at',{ascending:false}); if(error)throw error;
+    CLOUD_PRODUCTS=(data||[]).map(r=>({id:r.id,owner:r.owner_id,n:r.name,d:r.descr||'',p:+r.price,ic:r.icon||'💊',bg:r.bg||'var(--mint)',tag:r.tag||'',by:r.author||''}));
+    return CLOUD_PRODUCTS; }catch(e){ return CLOUD_PRODUCTS; } }
+async function cloudAddProduct(o){ const row={owner_id:cloudUser.id,name:o.n,descr:o.d,price:o.p,icon:o.ic,bg:o.bg,tag:o.tag,author:o.by}; const {data,error}=await SB.from('products').insert(row).select().single(); if(error)throw error; return data; }
+async function cloudDeleteProduct(id){ if(!cloudOn())return {error:new Error('offline')}; try{ return await SB.from('products').delete().eq('id',id); }catch(e){ return {error:e}; } }
+function allProducts(){ if(cloudOn()) return CLOUD_PRODUCTS.slice(); return (S.customProducts||[]); }
 function canSell(){ return !!(S.pro && S.pro.status==='verificato'); }
 function shopHTML(){
   const prods=allProducts(); const PAGE=8; const pages=Math.max(1,Math.ceil(prods.length/PAGE));
@@ -1845,11 +1884,9 @@ function shopHTML(){
   <div class="topbar"><div class="hello"><div class="k">Integratori · ${prods.length} prodotti</div><div class="n">🛍️ Integratori</div></div>
     <button class="avatar" style="border:none;position:relative" onclick="openCart()">🛒<span class="cartbadge" id="shopcart" style="display:none"></span></button></div>
 
-  <div class="banner gv" onclick="openCart()" style="cursor:pointer"><span class="b-ic">💊</span><h4>Kit personalizzato</h4><p>In base al tuo piano e alla fase del ciclo: Ferro, Inositolo e Omega-3. Sconto bundle -20%.</p></div>
-
   ${canSell()?`<button class="btn ghost sm" style="margin-bottom:12px" onclick="addProduct()">＋ Inserisci un tuo prodotto (creator verificato)</button>`:`<div class="alert info" style="padding:10px 12px"><span>🛒</span><div>I professionisti verificati possono inserire prodotti reali. Diventa professionista in Profilo.</div></div>`}
 
-  <div class="grid2" id="prod-grid">
+  ${prods.length?`<div class="grid2" id="prod-grid">
     ${slice.map((p)=>{const gi=prods.indexOf(p);return `
       <div class="prod">
         ${p.tag?`<span class="tagbadge">${p.tag}</span>`:''}
@@ -1863,7 +1900,7 @@ function shopHTML(){
     <button class="btn sm sec" style="width:auto;padding:9px 18px;${pg===0?'opacity:.35':''}" onclick="shopPage(${pg-1})">‹ Prec</button>
     <div class="sub" style="font-weight:700">Pagina ${pg+1} / ${pages}</div>
     <button class="btn sm sec" style="width:auto;padding:9px 18px;${pg>=pages-1?'opacity:.35':''}" onclick="shopPage(${pg+1})">Succ ›</button>
-  </div>
+  </div>`:`<div class="card" style="text-align:center"><div style="font-size:44px">🛍️</div><div class="h" style="justify-content:center">Ancora nessun prodotto</div><div class="sub">Il negozio si sta popolando: i professionisti verificati inseriscono qui i loro integratori reali. ${cloudOn()?'':'Attiva la modalità cloud per vederli.'}</div></div>`}
 
   <button class="btn" style="margin-top:16px" onclick="openCart()">🛒 Vai al carrello (${cartCount()})</button>
   <div class="card" style="margin-top:16px">
@@ -1873,13 +1910,19 @@ function shopHTML(){
   </div>`;
 }
 function shopPage(n){const prods=allProducts();const pages=Math.max(1,Math.ceil(prods.length/8));S.shopPage=Math.min(Math.max(0,n),pages-1);rebuild('shop');go('shop');document.getElementById('viewport').scrollTop=0;}
-function addProduct(){
+async function addProduct(){
   if(!canSell()){toast('Solo i professionisti verificati possono inserire prodotti');return;}
   const n=prompt('Nome prodotto:'); if(!n||!n.trim())return;
   const d=prompt('Descrizione breve:')||'';
   const pr=parseFloat((prompt('Prezzo € (es. 19.90):','19.90')||'').replace(',','.')); if(isNaN(pr)){toast('Prezzo non valido');return;}
-  S.customProducts=S.customProducts||[]; S.customProducts.push({n:n.trim(),d:d.trim(),p:pr,ic:'🧪',bg:'#e8f1ff',tag:'Creator',by:S.user.name});
-  save(); rebuild('shop'); go('shop'); toast('Prodotto pubblicato nello shop ✓');
+  const ic=(prompt('Emoji/icona del prodotto:','💊')||'💊').trim()||'💊';
+  const obj={n:n.trim(),d:d.trim(),p:pr,ic:ic,bg:'#e8f1ff',tag:'Creator',by:S.user.name};
+  if(cloudOn()&&loggedIn()){
+    toast('Pubblicazione nel cloud…');
+    try{ await cloudAddProduct(obj); _prodLoaded=false; await cloudLoadProducts(); _prodLoaded=true; }
+    catch(e){ toast('Errore cloud: '+(e.message||e)); return; }
+  } else { S.customProducts=S.customProducts||[]; S.customProducts.push(obj); save(); }
+  rebuild('shop'); go('shop'); toast('Prodotto pubblicato nello shop ✓');
 }
 function addCart(i){const p=allProducts()[i];if(!p)return;const e=S.cart.find(x=>x.n===p.n);if(e)e.q++;else S.cart.push({n:p.n,p:+p.p,q:1});save();renderCartBadge();const b=document.getElementById('shopcart');if(b){const c=cartCount();b.style.display=c?'flex':'none';b.textContent=c;}toast(p.n+' aggiunto al carrello');}
 function cartQty(n,delta){const it=S.cart.find(x=>x.n===n);if(!it)return;it.q+=delta;if(it.q<=0){S.cart=S.cart.filter(x=>x.n!==n);}save();renderCartBadge();openCart();}
@@ -1908,7 +1951,39 @@ function openCart(){
     </div>
     <button class="btn" onclick="checkout()">Procedi al pagamento · €${tot.toFixed(2)}</button>`;
 }
-function checkout(){ S.cart=[]; save(); renderCartBadge(); toast('Ordine confermato ✓ · in arrivo in 48h'); go('shop'); }
+async function checkout(){
+  if(!S.cart.length)return;
+  if(!(cloudOn()&&loggedIn())){ toast('Accedi per completare il pagamento'); go('cloud'); return; }
+  toast('Apertura pagamento sicuro Stripe…');
+  const items=S.cart.map(x=>({name:x.n,price:+x.p,qty:x.q}));
+  const amount=items.reduce((a,b)=>a+b.price*b.qty,0);
+  let orderId=null;
+  try{ // registra l'ordine (tracciabilità) come "in attesa di pagamento"
+    const {data}=await SB.from('orders').insert({user_id:cloudUser.id,items:items,amount:amount,currency:'eur',status:'pending'}).select().single();
+    orderId=data&&data.id;
+  }catch(e){}
+  try{
+    const {data,error}=await SB.functions.invoke('create-checkout',{ body:{ items, order_id:orderId, success_url:location.href, cancel_url:location.href } });
+    if(error)throw error;
+    if(data&&data.error)throw new Error(data.error);
+    if(data&&data.url){ location.href=data.url; return; }
+    throw new Error('URL di pagamento non ricevuto');
+  }catch(e){ toast('Pagamento non disponibile: '+(e.message||e)); }
+}
+async function cloudLoadOrders(){ if(!cloudOn()||!cloudUser)return []; try{ const {data,error}=await SB.from('orders').select('*').order('created_at',{ascending:false}); if(error)throw error; return data||[]; }catch(e){ return []; } }
+function ordiniHTML(){
+  return `<button class="back" onclick="go('profilo')">← Profilo</button>
+  <div class="topbar" style="padding-top:0"><div class="hello"><div class="k">Tracciabilità</div><div class="n">📦 I miei ordini</div></div></div>
+  <div id="orders-list"><div class="card"><div class="sub">Caricamento…</div></div></div>`;
+}
+function renderOrders(){ const c=document.getElementById('orders-list'); if(!c)return;
+  if(!(cloudOn()&&loggedIn())){ c.innerHTML='<div class="card" style="text-align:center"><div class="sub">Accedi per vedere i tuoi ordini.</div></div>'; return; }
+  cloudLoadOrders().then(rows=>{ c.innerHTML=rows.length?rows.map(o=>{ const st={paid:['✅ Pagato','var(--green-d)'],pending:['⏳ In attesa','#8a5a08'],failed:['❌ Fallito','var(--coral)']}[o.status]||[o.status,'var(--muted)']; const items=Array.isArray(o.items)?o.items:[]; return `<div class="card">
+    <div class="row"><div class="rt"><b>Ordine #${o.id}</b><small>${(o.created_at||'').slice(0,16).replace('T',' ')}</small></div><div class="rv" style="color:${st[1]};font-weight:800;font-size:12px">${st[0]}</div></div>
+    <div class="sub" style="margin:6px 0">${items.map(it=>`${it.qty}× ${it.name}`).join(', ')||'—'}</div>
+    <div class="row"><div class="rt"><b>Totale</b></div><div class="rv" style="color:var(--green-d)">€${(+o.amount||0).toFixed(2)}</div></div>
+  </div>`; }).join(''):'<div class="card" style="text-align:center"><div style="font-size:40px">📦</div><div class="sub">Nessun ordine ancora.</div></div>'; });
+}
 
 /* ---------- COACH AI ---------- */
 function coachHTML(){
@@ -2089,8 +2164,11 @@ function profiloHTML(){
     <div class="row" onclick="go('pro')" style="cursor:pointer"><div class="ri" style="background:var(--violet-s)">🎓</div><div class="rt"><b>${S.pro?'Il mio profilo professionista':'Diventa professionista'}</b><small>${S.pro?(S.pro.status==='verificato'?'verificato ✔️':'in verifica ⏳'):'nutrizionista, medico, PT…'}</small></div><div class="rv">›</div></div>
     <div class="row" onclick="go('cloud')" style="cursor:pointer"><div class="ri" style="background:#e8f1ff">☁️</div><div class="rt"><b>${loggedIn()?'Account cloud':'Attiva modalità reale'}</b><small>${loggedIn()?(cloudUser.email):'account veri + video reali'}</small></div><div class="rv">›</div></div>
     <div class="row" onclick="go('prenota')" style="cursor:pointer"><div class="ri" style="background:var(--mint)">🩺</div><div class="rt"><b>Le mie visite</b></div><div class="rv">›</div></div>
-    <div class="row" onclick="openCart()" style="cursor:pointer"><div class="ri" style="background:var(--mint)">📦</div><div class="rt"><b>I miei ordini</b></div><div class="rv">›</div></div>
+    <div class="row" onclick="go('ordini')" style="cursor:pointer"><div class="ri" style="background:var(--mint)">📦</div><div class="rt"><b>I miei ordini</b></div><div class="rv">›</div></div>
     <div class="row" onclick="go('promemoria')" style="cursor:pointer"><div class="ri" style="background:var(--mint)">⏰</div><div class="rt"><b>Promemoria</b></div><div class="rv">›</div></div>
+    <div class="row" onclick="go('termini')" style="cursor:pointer"><div class="ri" style="background:var(--coral-s)">⚖️</div><div class="rt"><b>Termini e responsabilità</b><small>ruolo di Auréa e responsabilità</small></div><div class="rv">›</div></div>
+    <div class="row" onclick="go('privacy')" style="cursor:pointer"><div class="ri" style="background:#e8f1ff">🔒</div><div class="rt"><b>Privacy</b><small>come trattiamo i tuoi dati</small></div><div class="rv">›</div></div>
+    ${isAdmin()?`<div class="row" onclick="go('admin')" style="cursor:pointer"><div class="ri" style="background:#fff0e0">🛠️</div><div class="rt"><b>Pannello admin</b><small>gestisci professionisti e prodotti</small></div><div class="rv">›</div></div>`:''}
   </div>
 
   <div class="card">
@@ -2113,7 +2191,7 @@ function profiloHTML(){
 }
 
 /* ---------- SUPPLEMENT RECO ENGINE (collegato ai dati) ---------- */
-function addCartByName(n){const p=PRODUCTS.find(x=>x.n===n);if(!p)return;const e=S.cart.find(x=>x.n===n);if(e)e.q++;else S.cart.push({n:p.n,p:p.p,q:1});renderCartBadge();const b=document.getElementById('shopcart');if(b){const c=cartCount();b.style.display=c?'flex':'none';b.textContent=c;}toast(n+' aggiunto al carrello');}
+function addCartByName(n){const p=allProducts().find(x=>x.n===n);if(!p){toast('Prodotto non ancora disponibile');return;}const e=S.cart.find(x=>x.n===n);if(e)e.q++;else S.cart.push({n:p.n,p:+p.p,q:1});renderCartBadge();const b=document.getElementById('shopcart');if(b){const c=cartCount();b.style.display=c?'flex':'none';b.textContent=c;}toast(n+' aggiunto al carrello');}
 function recommend(context){
   // context: 'home' | 'ciclo' | 'mood' | 'peso'
   const wp=weightPlan();
@@ -2152,17 +2230,25 @@ function recommend(context){
   return items;
 }
 function suppRecoCard(title,subtitle,context){
-  const items=recommend(context);
+  const prods=allProducts();
+  // mostra solo prodotti REALI presenti nello shop; se lo shop è vuoto, mostra un avviso
+  const items=recommend(context).map(it=>{ const p=prods.find(x=>x.n===it.n); return p?{...it,p}:null; }).filter(Boolean);
+  if(!items.length){
+    return `<div class="card">
+      <div class="h">💊 ${title}<span class="pill">per te</span></div>
+      <div class="sub">${prods.length?'Nessun integratore adatto in catalogo al momento.':'Il catalogo integratori si sta popolando: presto troverai qui i prodotti consigliati per te.'} <a onclick="go('shop')" style="color:var(--green-d);font-weight:700;cursor:pointer">Apri lo shop →</a></div>
+    </div>`;
+  }
   return `<div class="card">
-    <div class="h">💊 ${title}<span class="pill">AI · per te</span></div>
+    <div class="h">💊 ${title}<span class="pill">per te</span></div>
     <div class="sub" style="margin-bottom:10px">${subtitle}</div>
-    ${items.map(it=>{const p=PRODUCTS.find(x=>x.n===it.n)||{p:0,ic:'💊',bg:'var(--mint)'};return `
+    ${items.map(it=>{const p=it.p;return `
       <div class="row">
-        <div class="ri" style="background:${p.bg}">${p.ic}</div>
+        <div class="ri" style="background:${p.bg||'var(--mint)'}">${p.ic||'💊'}</div>
         <div class="rt"><b>${it.n}</b><small>${it.why}</small></div>
         <div class="rv" style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
-          <span class="price" style="font-size:13px">€${p.p.toFixed(2)}</span>
-          <button class="add" style="width:30px;height:30px;font-size:18px" onclick="addCartByName('${it.n}')">＋</button>
+          <span class="price" style="font-size:13px">€${(+p.p).toFixed(2)}</span>
+          <button class="add" style="width:30px;height:30px;font-size:18px" onclick="addCartByName('${it.n.replace(/'/g,"\\'")}')">＋</button>
         </div>
       </div>`}).join('')}
     <button class="btn ghost sm" style="margin-top:10px" onclick="go('shop')">Apri lo shop integratori →</button>
@@ -3279,8 +3365,15 @@ function proHTML(){
       <div id="pro-cert-status" class="sub">Nessun documento caricato. Carica laurea/abilitazione/iscrizione all'albo.</div>
       <div class="grid2" style="margin-top:10px"><button class="btn sm sec" onclick="uploadCert()">📷 Fotografa</button><button class="btn sm sec" onclick="fileFallback(setCert,'image/*,application/pdf')">📁 Scegli file (foto o PDF)</button></div>
     </div>
-    <button class="btn" style="margin-top:14px" onclick="submitPro()">Invia per la verifica</button>
-    <div class="tiny">Inviando dichiari che i dati sono veri e verificabili. Le credenziali false comportano l'esclusione. La validazione definitiva avviene con l'ente competente (albo/ordine).</div>
+    <div class="card tight" style="border:1.5px solid var(--coral);box-shadow:none;background:var(--coral-s);margin-top:14px">
+      <div class="h" style="font-size:14px">⚖️ Dichiarazione di responsabilità</div>
+      <label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer;font-size:12.5px;line-height:1.5">
+        <input type="checkbox" id="pro-disclaimer" style="margin-top:3px;width:18px;height:18px;flex:0 0 18px">
+        <span>Dichiaro che tutti i dati, i titoli e i certificati che carico sono <b>autentici e veritieri</b> e che sono <b>l'unico responsabile</b> della loro veridicità. In caso di certificato falso o contraffatto, la responsabilità — civile e penale — è esclusivamente mia, non di Auréa. Sono inoltre l'unico responsabile delle prestazioni erogate e di quanto accade nel rapporto con il cliente: <b>Auréa è solo un intermediario tecnologico</b> che mette in contatto le parti e non risponde del servizio professionale.</span>
+      </label>
+    </div>
+    <button class="btn" style="margin-top:14px" onclick="submitPro()">Accetto e invio per la verifica</button>
+    <div class="tiny">Le credenziali false comportano l'esclusione immediata e possibili conseguenze legali. La validazione definitiva avviene con l'ente competente (albo/ordine).</div>
   </div>`;
 }
 let _proCert=null;
@@ -3303,7 +3396,9 @@ function submitPro(){
   if(!name||!title){toast('Inserisci nome e titolo di studio');return;}
   if(!_proCert){toast('Carica il certificato/titolo');return;}
   if(p.albo && !/^[0-9]{4,}$/.test(albo)){toast('Numero d\'albo non valido (min 4 cifre)');return;}
-  S.pro={profession:prof,ic:p.ic,ente:p.ente,name,title,uni,year,albo,reg,price:price.startsWith('€')?price:'€'+price,bio,cert:_proCert,followers:0,status:'in_verifica',submitted:true,avail:[]};
+  const disc=document.getElementById('pro-disclaimer');
+  if(!disc||!disc.checked){toast('Devi accettare la dichiarazione di responsabilità');return;}
+  S.pro={profession:prof,ic:p.ic,ente:p.ente,name,title,uni,year,albo,reg,price:price.startsWith('€')?price:'€'+price,bio,cert:_proCert,followers:0,status:'in_verifica',submitted:true,avail:[],disclaimerAccepted:true,disclaimerAt:new Date().toISOString()};
   save(); rebuild('pro'); go('pro');
   toast('Inviato! Verifica dei titoli in corso…');
   setTimeout(verifyPro,2600);
@@ -3318,14 +3413,110 @@ function verifyPro(){
   save(); if(curScreen==='pro'){rebuild('pro');go('pro');} rebuild('prenota');
   toast(S.pro.status==='verificato'?'Titoli verificati ✔️ Ora sei attivo!':'Servono documenti aggiuntivi');
 }
+/* ============ TERMINI E RESPONSABILITÀ ============ */
+function terminiHTML(){
+  return `<button class="back" onclick="go('profilo')">← Profilo</button>
+  <div class="topbar" style="padding-top:0"><div class="hello"><div class="k">Trasparenza</div><div class="n">⚖️ Termini e responsabilità</div></div></div>
+  <div class="card">
+    <div class="h">Ruolo di Auréa</div>
+    <div class="sub">Auréa è una <b>piattaforma tecnologica di intermediazione</b>: mette in contatto utenti e professionisti (nutrizionisti, medici, estetisti, trainer, ecc.) e ospita la vendita di integratori inseriti da terzi. Auréa <b>non eroga</b> prestazioni sanitarie, mediche o professionali e non è parte del rapporto tra utente e professionista.</div>
+  </div>
+  <div class="card">
+    <div class="h">Veridicità dei titoli</div>
+    <div class="sub">Ogni professionista, al momento della registrazione, <b>dichiara e garantisce</b> l'autenticità dei propri dati, titoli e certificati. La responsabilità — civile e penale — di eventuali documenti <b>falsi o contraffatti</b> è <b>esclusivamente del professionista</b> che li ha caricati, mai di Auréa. Auréa effettua controlli di formato ma la validazione definitiva spetta agli enti/albi competenti.</div>
+  </div>
+  <div class="card">
+    <div class="h">Rapporto tra utente e professionista</div>
+    <div class="sub">Qualsiasi cosa avvenga nel rapporto tra utente e professionista (esito delle prestazioni, consigli, appuntamenti, pagamenti, controversie) è di <b>esclusiva responsabilità delle parti coinvolte</b>. Auréa non risponde della qualità, dell'idoneità o degli effetti delle prestazioni.</div>
+  </div>
+  <div class="card">
+    <div class="h">Integratori e salute</div>
+    <div class="sub">Gli integratori non sono farmaci e non sostituiscono una dieta varia o il parere del medico. I contenuti dell'app (piani, consigli, AI) sono <b>indicativi</b> e non costituiscono diagnosi o terapia. In caso di patologie, gravidanza o dubbi, consulta un professionista sanitario.</div>
+  </div>
+  <div class="card">
+    <div class="h">Pagamenti</div>
+    <div class="sub">I pagamenti sono gestiti tramite fornitori esterni sicuri (Stripe). Auréa non conserva i dati della tua carta.</div>
+  </div>
+  <div class="tiny">Usando Auréa accetti questi termini. Documento indicativo: per un uso commerciale reale fai validare i termini da un legale.</div>`;
+}
+function privacyHTML(){
+  return `<button class="back" onclick="go('profilo')">← Profilo</button>
+  <div class="topbar" style="padding-top:0"><div class="hello"><div class="k">I tuoi dati, al sicuro</div><div class="n">🔒 Privacy</div></div></div>
+  <div class="card">
+    <div class="h">Titolare</div>
+    <div class="sub">Il trattamento dei dati è gestito dal titolare di Auréa. Per qualsiasi richiesta: <b>samuele@grenworld.com</b>.</div>
+  </div>
+  <div class="card">
+    <div class="h">Quali dati trattiamo</div>
+    <div class="sub">Dati dell'account (nome, email, età, altezza, peso, obiettivi), <b>dati sulla salute</b> (storia clinica, patologie, intolleranze, ciclo, sonno, umore, diario) trattati solo con il tuo consenso esplicito, dati d'uso (passi, allenamenti, contenuti, prenotazioni, ordini) e dati di pagamento gestiti da Stripe.</div>
+  </div>
+  <div class="card">
+    <div class="h">Perché e con chi</div>
+    <div class="sub">Usiamo i dati per farti funzionare l'app, personalizzare piani e consigli, metterti in contatto con i professionisti e gestire ordini e pagamenti. Ci appoggiamo a fornitori sicuri: <b>Supabase</b> (cloud), <b>Stripe</b> (pagamenti), <b>Anthropic</b> (funzioni AI). Non vendiamo i tuoi dati.</div>
+  </div>
+  <div class="card">
+    <div class="h">La tua storia clinica è privata</div>
+    <div class="sub">I tuoi dati sanitari sono <b>visibili solo a te</b>: le regole di sicurezza del database impediscono ad altri utenti di leggerli. Con un professionista condividi solo ciò che serve alla prestazione.</div>
+  </div>
+  <div class="card">
+    <div class="h">I tuoi diritti (GDPR)</div>
+    <div class="sub" style="margin-bottom:12px">Esercita subito i tuoi diritti direttamente qui, oppure scrivi a samuele@grenworld.com. Hai anche diritto di reclamo al Garante Privacy.</div>
+    <button class="btn sec sm" style="margin-bottom:8px" onclick="exportMyData()">⬇️ Esporta i miei dati (portabilità)</button>
+    <button class="btn sec sm" style="margin-bottom:8px" onclick="revokeHealthConsent()">🚫 Revoca il consenso ai dati sanitari</button>
+    <button class="btn sm" style="background:var(--coral);box-shadow:none" onclick="deleteMyAccount()">🗑️ Elimina account e tutti i dati</button>
+    ${S.consent?`<div class="tiny" style="margin-top:10px">Consenso registrato il ${(S.consent.at||'').slice(0,10)} · versione ${S.consent.version||'—'}${S.consent.health===false?' · dati sanitari REVOCATI':''}.</div>`:''}
+  </div>
+  <div class="card">
+    <div class="h">💳 Sicurezza dei pagamenti</div>
+    <div class="sub">I pagamenti sono elaborati da <b>Stripe</b> (certificato PCI-DSS). I dati della tua carta viaggiano cifrati e <b>non transitano né sono conservati</b> sui server di Auréa. Ogni ordine viene registrato con data, importo e riferimento della transazione per la tracciabilità.</div>
+  </div>
+  <div class="tiny">Versione sintetica. Il documento completo (GDPR) è disponibile su richiesta. Bozza indicativa da validare con un legale.</div>`;
+}
+/* ============ PANNELLO ADMIN (solo proprietario) ============ */
+let ADMIN_PROS=[], ADMIN_PRODS=[];
+function adminHTML(){
+  if(!isAdmin()) return `<button class="back" onclick="go('profilo')">← Profilo</button><div class="card" style="text-align:center"><div style="font-size:44px">🔒</div><div class="sub">Area riservata al proprietario.</div></div>`;
+  return `<button class="back" onclick="go('profilo')">← Profilo</button>
+  <div class="topbar" style="padding-top:0"><div class="hello"><div class="k">Solo tu vedi questa sezione</div><div class="n">🛠️ Admin</div></div></div>
+  <div class="alert info"><span>👑</span><div>Gestisci professionisti e prodotti reali della piattaforma. Le modifiche valgono per tutti gli utenti.</div></div>
+  <div class="card"><div class="h">🩺 Professionisti</div><div id="admin-pros"><div class="sub">Caricamento…</div></div></div>
+  <div class="card"><div class="h">🛍️ Prodotti in vendita</div><div id="admin-prods"><div class="sub">Caricamento…</div></div>
+    <button class="btn sec sm" style="margin-top:10px" onclick="adminAddProduct()">＋ Aggiungi prodotto</button>
+  </div>`;
+}
+function renderAdmin(){
+  if(!isAdmin())return;
+  cloudLoadAllPros().then(rows=>{ ADMIN_PROS=rows; const c=document.getElementById('admin-pros'); if(!c)return;
+    c.innerHTML=rows.length?rows.map(r=>`<div class="row" style="flex-wrap:wrap">
+      <div class="ri" style="background:var(--mint)">${r.ic||'👤'}</div>
+      <div class="rt" style="flex:1"><b>${r.name||'—'}</b><small>${r.profession||''} · ${r.ente||''}</small></div>
+      <span class="chip ${r.status==='verificato'?'sel':''}" style="font-size:10px">${r.status}</span>
+      <div style="display:flex;gap:6px;width:100%;margin-top:8px">
+        ${r.status!=='verificato'?`<button class="btn sm" style="flex:1;padding:7px" onclick="adminSetPro('${r.id}','verificato')">✔️ Approva</button>`:`<button class="btn sm sec" style="flex:1;padding:7px" onclick="adminSetPro('${r.id}','sospeso')">⏸ Sospendi</button>`}
+        <button class="btn sm" style="flex:1;padding:7px;background:var(--coral);box-shadow:none" onclick="adminDelPro('${r.id}')">🗑 Rimuovi</button>
+      </div>
+    </div>`).join(''):'<div class="sub">Ancora nessun professionista registrato.</div>';
+  });
+  cloudLoadProducts().then(()=>{ const c=document.getElementById('admin-prods'); if(!c)return;
+    c.innerHTML=CLOUD_PRODUCTS.length?CLOUD_PRODUCTS.map(p=>`<div class="row">
+      <div class="ri" style="background:${p.bg||'var(--mint)'}">${p.ic||'💊'}</div>
+      <div class="rt" style="flex:1"><b>${p.n}</b><small>€${(+p.p).toFixed(2)}${p.by?' · '+p.by:''}</small></div>
+      <button onclick="adminDelProduct('${p.id}')" style="background:none;border:none;color:var(--coral);font-size:18px;cursor:pointer">🗑</button>
+    </div>`).join(''):'<div class="sub">Ancora nessun prodotto in vendita.</div>';
+  });
+}
+async function adminSetPro(id,status){ try{ const {error}=await SB.from('pros').update({status}).eq('id',id); if(error)throw error; await SB.from('profiles').update({pro_status:status}).eq('id',id); toast('Professionista: '+status); _docsLoaded=false; renderAdmin(); }catch(e){ toast('Errore: '+(e.message||e)); } }
+async function adminDelPro(id){ if(!confirm('Rimuovere questo professionista dalla piattaforma?'))return; try{ const {error}=await SB.from('pros').delete().eq('id',id); if(error)throw error; await SB.from('profiles').update({is_pro:false,pro_status:null}).eq('id',id); toast('Professionista rimosso'); _docsLoaded=false; renderAdmin(); }catch(e){ toast('Errore: '+(e.message||e)); } }
+async function adminDelProduct(id){ if(!confirm('Eliminare questo prodotto?'))return; const {error}=await cloudDeleteProduct(id); if(error){toast('Errore: '+(error.message||error));return;} _prodLoaded=false; toast('Prodotto eliminato'); renderAdmin(); }
+async function adminAddProduct(){ const n=prompt('Nome prodotto:'); if(!n||!n.trim())return; const d=prompt('Descrizione breve:')||''; const pr=parseFloat((prompt('Prezzo € (es. 19.90):','19.90')||'').replace(',','.')); if(isNaN(pr)){toast('Prezzo non valido');return;} const ic=(prompt('Emoji/icona:','💊')||'💊').trim()||'💊';
+  try{ await cloudAddProduct({n:n.trim(),d:d.trim(),p:pr,ic:ic,bg:'#e8f1ff',tag:'',by:'Auréa'}); _prodLoaded=false; toast('Prodotto aggiunto'); renderAdmin(); }catch(e){ toast('Errore: '+(e.message||e)); } }
 const PRO_TIMES=['08:00','09:00','09:30','10:00','10:30','11:00','12:00','14:00','15:00','15:30','16:00','16:30','17:00','18:00','19:00'];
 function toggleProReco(name,btn){ if(!S.pro)return; S.pro.recommends=S.pro.recommends||[]; const i=S.pro.recommends.indexOf(name); if(i<0)S.pro.recommends.push(name); else S.pro.recommends.splice(i,1); if(btn)btn.classList.toggle('sel'); save(); toast(i<0?('Consigli: '+name):('Rimosso: '+name)); }
 // prodotti consigliati da un professionista (il mio profilo o default per specialità dei demo)
 const DOC_RECO_BY_SPEC={nutrizion:["Omega-3 Ultra","Proteine Whey","Fibre + Psillio"],diabet:["Omega-3 Ultra","Magnesio + B6","Fibre + Psillio"],dermatolog:["Collagene Beauty","Zinco","Vitamina C"],estetic:["Collagene Beauty","Vitamina C"],endocrin:["Vitamina D3+K2","Inositolo","Magnesio + B6"],ginecolog:["Ferro + Vit C","Inositolo","Omega-3 Ultra"],trainer:["Proteine Whey","Creatina","Magnesio + B6"],psicolog:["Ashwagandha","Magnesio + B6","Melatonina"]};
 function docRecos(d){
   if(d.me) return (S.pro&&S.pro.recommends)||[];
-  const key=Object.keys(DOC_RECO_BY_SPEC).find(k=>(d.s||'').toLowerCase().includes(k));
-  return key?DOC_RECO_BY_SPEC[key]:[];
+  return d.recommends||[];
 }
 function renderProAvail(){
   const c=document.getElementById('pro-avail'); if(!c)return;
@@ -3473,7 +3664,7 @@ async function doSignIn(){
   const e=(document.getElementById('cl-email').value||'').trim(), p=(document.getElementById('cl-pass').value||'');
   if(!e||!p){toast('Inserisci email e password');return;}
   toast('Accesso…');
-  try{ await cloudSignIn(e,p); rebuildAll(); go('home'); toast('Bentornata '+(S.user.name||'')+'! ☁️'); }
+  try{ await cloudSignIn(e,p); rebuildAll(); go('home'); preloadCloud(); toast('Bentornata '+(S.user.name||'')+'! ☁️'); }
   catch(err){ toast('Accesso fallito: '+(err.message||err)); }
 }
 async function doSignOut(){ await cloudSignOut(); rebuild('cloud'); go('cloud'); showAuthWall(); toast('Uscita effettuata'); }
@@ -3507,7 +3698,11 @@ function authTab(mode,btn){
         <div id="pw-low">⚪ una lettera minuscola</div>
         <div id="pw-num">⚪ un numero</div>
       </div>
-      <button class="btn" style="margin-top:8px" onclick="authRegister()">Registrati</button>
+      <label style="display:flex;gap:9px;align-items:flex-start;font-size:12px;line-height:1.5;margin-top:12px;text-align:left"><input type="checkbox" id="aw-age" style="margin-top:2px;width:17px;height:17px;flex:0 0 17px"><span>Dichiaro di avere <b>almeno 18 anni</b>.</span></label>
+      <label style="display:flex;gap:9px;align-items:flex-start;font-size:12px;line-height:1.5;margin-top:8px;text-align:left"><input type="checkbox" id="aw-terms" style="margin-top:2px;width:17px;height:17px;flex:0 0 17px"><span>Ho letto e accetto i <a onclick="openDocModal('termini')" style="color:var(--green-d);font-weight:700;cursor:pointer">Termini di Servizio</a>.</span></label>
+      <label style="display:flex;gap:9px;align-items:flex-start;font-size:12px;line-height:1.5;margin-top:8px;text-align:left"><input type="checkbox" id="aw-health" style="margin-top:2px;width:17px;height:17px;flex:0 0 17px"><span>Acconsento al trattamento dei miei <b>dati sulla salute</b> per personalizzare piani e consigli (<a onclick="openDocModal('privacy')" style="color:var(--green-d);font-weight:700;cursor:pointer">Privacy</a>).</span></label>
+      <label style="display:flex;gap:9px;align-items:flex-start;font-size:12px;line-height:1.5;margin-top:8px;text-align:left"><input type="checkbox" id="aw-mkt" style="margin-top:2px;width:17px;height:17px;flex:0 0 17px"><span>(Facoltativo) Voglio ricevere consigli e novità via email.</span></label>
+      <button class="btn" style="margin-top:12px" onclick="authRegister()">Registrati</button>
       <div class="tiny" style="margin-top:10px">Ti invieremo un'email di verifica: confermala, poi torna qui e accedi.</div>`;
   }
 }
@@ -3519,6 +3714,18 @@ function saveCloudCfg2(){
   localStorage.setItem('aurea_cloud',JSON.stringify({url,key}));
   if(cloudInit()){ toast('Accesso attivato ✓'); authTab('login'); } else { toast('Libreria non caricata: apri l\'app online'); }
 }
+function openDocModal(which){
+  const html=(which==='privacy'?privacyHTML():terminiHTML()).replace(/<button class="back"[^>]*>[\s\S]*?<\/button>/,'');
+  const box=document.createElement('div'); box.id='doc-modal'; box.style.cssText='position:absolute;inset:0;z-index:120;background:rgba(0,0,0,.55);display:flex;align-items:flex-end';
+  box.innerHTML=`<div style="background:var(--bg,#faf4ec);width:100%;border-radius:22px 22px 0 0;padding:14px 14px calc(16px + env(safe-area-inset-bottom,0));max-height:88%;overflow-y:auto">
+    <div class="grab"></div>
+    ${html}
+    <button class="btn" style="margin-top:6px" onclick="closeDocModal()">Chiudi</button>
+  </div>`;
+  box.onclick=(ev)=>{ if(ev.target===box)closeDocModal(); };
+  (document.getElementById('authwall')||document.body).appendChild(box);
+}
+function closeDocModal(){ const b=document.getElementById('doc-modal'); if(b)b.remove(); }
 function pwRules(p){ return {len:(p||'').length>=8, up:/[A-Z]/.test(p||''), low:/[a-z]/.test(p||''), num:/[0-9]/.test(p||'')}; }
 function pwCheck(p){ const r=pwRules(p); const set=(id,ok)=>{const e=document.getElementById(id);if(e)e.innerHTML=(ok?'🟢':'⚪')+e.textContent.slice(1);}; set('pw-len',r.len);set('pw-up',r.up);set('pw-low',r.low);set('pw-num',r.num); }
 function pwOk(p){ const r=pwRules(p); return r.len&&r.up&&r.low&&r.num; }
@@ -3527,7 +3734,7 @@ async function authLogin(){
   const e=(document.getElementById('aw-email').value||'').trim(), p=document.getElementById('aw-pass').value||'';
   if(!e||!p){toast('Inserisci email e password');return;}
   toast('Accesso…');
-  try{ await cloudSignIn(e,p); hideAuthWall(); rebuildAll(); if(!S.setup){showOnboard();}else{go('home');} toast('Bentornata!'); }
+  try{ await cloudSignIn(e,p); hideAuthWall(); rebuildAll(); if(!S.setup){showOnboard();}else{go('home');} preloadCloud(); toast('Bentornata!'); }
   catch(err){ toast(/confirm|not confirmed/i.test(err.message||'')?'Prima verifica l\'email che ti abbiamo inviato':'Accesso fallito: '+(err.message||err)); }
 }
 async function authRegister(){
@@ -3536,8 +3743,14 @@ async function authRegister(){
   const e=(document.getElementById('aw-email').value||'').trim(), p=document.getElementById('aw-pass').value||'';
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){toast('Inserisci un\'email valida');return;}
   if(!pwOk(p)){toast('Password non sicura: 8+ caratteri, maiuscola, minuscola e numero');return;}
+  const ak=document.getElementById('aw-age'), tk=document.getElementById('aw-terms'), hk=document.getElementById('aw-health'), mk=document.getElementById('aw-mkt');
+  if(!ak||!ak.checked){toast('Devi avere almeno 18 anni');return;}
+  if(!tk||!tk.checked){toast('Devi accettare i Termini di Servizio');return;}
+  if(!hk||!hk.checked){toast('Devi acconsentire al trattamento dei dati sulla salute');return;}
+  S.consent={age18:true,terms:true,health:true,marketing:!!(mk&&mk.checked),version:POLICY_VERSION,at:new Date().toISOString()};
   toast('Creazione account…');
   try{ await cloudSignUp(e,p); if(n)S.user.name=n;
+    cloudLogConsent('signup',S.consent);
     document.getElementById('auth-forms').innerHTML=`<div class="alert ok" style="margin:0"><span>📧</span><div><b>Email di verifica inviata a ${e}.</b> Apri la mail, premi il link di conferma, poi torna qui e tocca "Accedi".</div></div><button class="btn" style="margin-top:14px" onclick="authTab('login')">Vai al login</button>`;
   }catch(err){ toast('Errore: '+(err.message||err)); }
 }
@@ -3549,21 +3762,27 @@ const BUILDERS={
   allenamento:allenamentoHTML, promemoria:promemoriaHTML, profilo:profiloHTML,
   planning:planningHTML, benessere:benessereHTML,
   community:communityHTML, frigo:frigoHTML, recupero:recuperoHTML,
-  detox:detoxHTML, digiuno:digiunoHTML, storia:storiaHTML, pro:proHTML, cloud:cloudHTML,
+  detox:detoxHTML, digiuno:digiunoHTML, storia:storiaHTML, pro:proHTML, cloud:cloudHTML, admin:adminHTML, termini:terminiHTML, privacy:privacyHTML, ordini:ordiniHTML,
   carrello:()=>''
 };
 function rebuild(id){const el=document.getElementById('sc-'+id);if(el&&BUILDERS[id])el.innerHTML=BUILDERS[id]();afterRender(id);}
 function afterRender(id){
   if(id==='home'){renderHomeAppts();}
   if(id==='piano'){renderDislike();}
-  if(id==='prenota'){renderMyAppts();renderDocs('Tutti');}
-  if(id==='shop'){renderCartBadge();const b=document.getElementById('shopcart');if(b){const c=cartCount();b.style.display=c?'flex':'none';b.textContent=c;}}
+  if(id==='prenota'){renderMyAppts();renderDocs('Tutti');
+    if(cloudOn()&&!_docsLoaded&&!_docsFetching){ _docsFetching=true; cloudLoadDocs().then(()=>{ _docsLoaded=true; _docsFetching=false; if(curScreen==='prenota')renderDocs('Tutti'); }); }
+  }
+  if(id==='shop'){renderCartBadge();const b=document.getElementById('shopcart');if(b){const c=cartCount();b.style.display=c?'flex':'none';b.textContent=c;}
+    if(cloudOn()&&!_prodLoaded&&!_prodFetching){ _prodFetching=true; cloudLoadProducts().then(()=>{ _prodLoaded=true; _prodFetching=false; if(curScreen==='shop')rebuild('shop'); }); }
+  }
   if(id==='promemoria'){renderReminders();}
   if(id==='planning'){renderPlanBody('cal');}
   if(id==='community'){renderComBody('perte');}
   if(id==='storia'){renderIntol();}
   if(id==='digiuno'){fastStatus();updateFastEnd();}
   if(id==='pro'){renderProAvail();}
+  if(id==='admin'){renderAdmin();}
+  if(id==='ordini'){renderOrders();}
 }
 function boot(){
   restore();
@@ -3580,7 +3799,7 @@ function boot(){
   const aw=document.getElementById('authwall');
   if(aw){ ['focusin','input'].forEach(ev=>aw.addEventListener(ev,()=>{ _authBusy=true; })); }
   if(cloudOn()){
-    cloudCheckSession().then(u=>{ if(u && !_authBusy){ hideAuthWall(); if(!S.setup){showOnboard();} else {rebuildAll();go('home');} } });
+    cloudCheckSession().then(u=>{ if(u && !_authBusy){ hideAuthWall(); if(!S.setup){showOnboard();} else {rebuildAll();go('home');} } preloadCloud(); });
   }
   // clock
   function tick(){const el=document.getElementById('clock');if(el)el.textContent=new Date().getHours()+':'+String(new Date().getMinutes()).padStart(2,'0');
