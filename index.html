@@ -488,6 +488,7 @@ const S = {
   shopPage:0,
   recovery:false,
   stepsConnected:false,
+  healthConnected:false, healthSource:null,
   workoutKcal:0,
   health:{interventi:"",diabete:"No",intolleranze:[],patologie:[],farmaci:"",gravidanza:false,note:""}
 };
@@ -535,7 +536,7 @@ function ring(pct,color,size=120,sw=13){
 }
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2200);try{save();}catch(e){}}
 let curScreen=null;
-const REFRESH_ON_SHOW=['home','piano','prenota','diario','digiuno','pro','profilo','detox','storia','benessere','allenamento','addfood','scanner','ciclo','planning','shop','admin','ordini','privacy','clientchat','clientplans','score','percorso','ricerca','sfide','badge','ricette'];
+const REFRESH_ON_SHOW=['home','piano','prenota','diario','digiuno','pro','profilo','detox','storia','benessere','allenamento','addfood','scanner','ciclo','planning','shop','admin','ordini','privacy','clientchat','clientplans','score','percorso','ricerca','sfide','badge','ricette','salute'];
 function go(id){
   const changing = curScreen!==id;
   if(changing && REFRESH_ON_SHOW.includes(id) && BUILDERS[id] && document.getElementById('sc-'+id)){ rebuild(id); }
@@ -833,6 +834,67 @@ function startPedometer(){
   });
 }
 function updateStepsUI(){ const el=document.getElementById('steps-val'); if(el) el.textContent=((S.steps||0)/1000).toFixed(1)+'k'; }
+
+/* ===== SALUTE · HealthKit / Google Fit (Fase 3) ===== */
+// La versione nativa (Capacitor) espone window.AureaHealth con:
+//   isAvailable():bool · requestAuth():Promise<bool> · platform:string
+//   getStepsToday():Promise<number> · getSleepLastNight():Promise<number ore>
+function healthBridge(){ return (typeof window!=='undefined' && window.AureaHealth) ? window.AureaHealth : null; }
+function healthMode(){ if(healthBridge())return 'native'; if(typeof DeviceMotionEvent!=='undefined')return 'sensor'; return 'none'; }
+function healthSourceName(){ const b=healthBridge(); if(b&&b.platform)return b.platform; if(b)return 'App Salute'; return 'Sensore del telefono'; }
+async function connectHealth(){
+  const b=healthBridge();
+  if(b){ try{ const ok=b.requestAuth?await b.requestAuth():true; if(!ok){ toast('Permesso Salute negato'); return; } S.healthConnected=true; S.healthSource=healthSourceName(); save(); await syncHealth(true); rebuild('salute'); rebuild('home'); toast('Salute collegata ✓'); }catch(e){ toast('Errore: '+(e.message||e)); } return; }
+  // fallback web: contapassi dal sensore del telefono
+  await connectSteps(); S.healthConnected=!!S.stepsConnected; S.healthSource='Sensore del telefono'; save(); if(curScreen==='salute')rebuild('salute');
+}
+let _healthSyncing=false;
+async function syncHealth(silent){
+  const b=healthBridge(); if(!b){ if(!silent)toast('Collega prima un dispositivo Salute'); return; }
+  if(_healthSyncing)return; _healthSyncing=true;   // evita ricorsione con afterRender('home')
+  try{
+    if(b.getStepsToday){ const st=await b.getStepsToday(); if(typeof st==='number'&&st>=0){ S.steps=Math.round(st); if(st>=10000)S._ever10k=true; } }
+    if(b.getSleepLastNight){ const sl=await b.getSleepLastNight(); if(typeof sl==='number'&&sl>0){ S.sleep=+(+sl).toFixed(1); } }
+    save(); try{saveScoreToday();checkMilestones(true);}catch(e){} rebuild('home'); if(curScreen==='score')rebuild('score'); if(curScreen==='salute')rebuild('salute'); if(!silent)toast('Dati Salute aggiornati');
+  }catch(e){ if(!silent)toast('Sincronizzazione non riuscita: '+(e.message||e)); }
+  finally{ _healthSyncing=false; }
+}
+function disconnectHealth(){ confirmBox('Scollegare Salute? I passi torneranno manuali o dal sensore.',()=>{ S.healthConnected=false; S.healthSource=null; save(); rebuild('salute'); rebuild('home'); toast('Salute scollegata'); },{icon:'❤️',yes:'Scollega',danger:true}); }
+function saluteHTML(){
+  const mode=healthMode(); const conn=!!S.healthConnected; const src=S.healthSource||healthSourceName();
+  const stepsV=(S.steps||0).toLocaleString('it-IT'); const sleepV=(S.sleep!=null)?(S.sleep+'h'):'—';
+  let head;
+  if(mode==='native'){
+    head = conn
+      ? `<div class="alert ok"><span>✅</span><div><b>Salute collegata</b> · fonte: ${src}. Passi e sonno si sincronizzano automaticamente.</div></div>`
+      : `<div class="card" style="border:1.5px solid var(--green);box-shadow:none;background:var(--mint)"><div class="h" style="font-size:14px">❤️ Collega Apple Salute / Google Fit</div><div class="sub" style="margin-bottom:10px">Importa automaticamente passi e ore di sonno reali dal telefono o dallo smartwatch.</div><button class="btn sm" onclick="connectHealth()">Collega ora</button></div>`;
+  } else if(mode==='sensor'){
+    head = `<div class="alert info"><span>ℹ️</span><div>Su questo dispositivo web posso contare i <b>passi</b> col sensore di movimento. L'importazione completa di <b>passi e sonno</b> da Apple Salute / Google Fit arriva con l'app installata dallo store.</div></div>`;
+  } else {
+    head = `<div class="alert info"><span>ℹ️</span><div>Il collegamento a Apple Salute / Google Fit sarà disponibile nell'app nativa. Per ora puoi inserire passi e sonno manualmente.</div></div>`;
+  }
+  return `<button class="back" onclick="go('profilo')">← Profilo</button>
+  <div class="topbar" style="padding-top:0"><div class="hello"><div class="k">Passi e sonno reali</div><div class="n">❤️ Salute e dispositivi</div></div></div>
+  ${head}
+  <div class="card">
+    <div class="row" style="align-items:center">
+      <div class="ri" style="background:#e8f1ff;color:var(--blue)">${ic('steps',20)}</div>
+      <div class="rt" style="flex:1"><b>Passi di oggi</b><small>${conn&&mode==='native'?('Da '+src):(S.stepsConnected?'Dal sensore del telefono':'Inserimento manuale')}</small></div>
+      <div class="rv"><b>${stepsV}</b></div>
+    </div>
+    <div class="row" style="align-items:center">
+      <div class="ri" style="background:var(--violet-s);color:var(--violet)">${ic('moon',20)}</div>
+      <div class="rt" style="flex:1"><b>Sonno</b><small>${conn&&mode==='native'?('Da '+src):'Inserimento manuale'}</small></div>
+      <div class="rv"><b>${sleepV}</b></div>
+    </div>
+  </div>
+  ${mode==='native'?(conn?`<button class="btn" onclick="syncHealth(false)">🔄 Sincronizza ora</button><button class="btn sec sm" style="margin-top:8px" onclick="disconnectHealth()">Scollega Salute</button>`:''):`
+    <div class="grid2" style="gap:10px">
+      <button class="btn sec sm" onclick="${S.stepsConnected?'setStepsManual()':'connectHealth()'}">${S.stepsConnected?'👟 Aggiorna passi':'👟 Attiva contapassi'}</button>
+      <button class="btn sec sm" onclick="setSleep()">😴 Inserisci sonno</button>
+    </div>`}
+  <div class="tiny" style="margin-top:12px">I dati Salute restano sul tuo dispositivo e alimentano il tuo Aurea Score. Non vengono condivisi con i professionisti.</div>`;
+}
 /* ===== calorie bruciate in base ai dati fisici ===== */
 function kcalFromSteps(){ const w=S.wNow||65; return Math.round((S.steps||0)*w*0.0004); }
 function burnedToday(){ return kcalFromSteps()+(S.workoutKcal||0); }
@@ -1011,6 +1073,7 @@ const MENU=[
   {id:'community',icn:'users',l:'Community'},
   {id:'ricette',icn:'bowl',l:'Ricette'},
   {id:'ciclo',icn:'flower',l:'Ciclo',fem:true},
+  {id:'salute',icn:'heart',l:'Salute'},
   {id:'recupero',icn:'rainbow',l:'Recupero'},
   {id:'detox',icn:'cup',l:'Detox'},
   {id:'digiuno',icn:'hourglass',l:'Digiuno'},
@@ -3021,6 +3084,7 @@ function profiloHTML(){
 
   <div class="card tight">
     <div class="row" onclick="go('percorso')" style="cursor:pointer"><div class="ri" style="background:var(--mint);color:var(--green-d)">${ic('sparkle',22)}</div><div class="rt"><b>Percorso Benessere</b><small>i tuoi traguardi, in una timeline</small></div><div class="rv">›</div></div>
+    <div class="row" onclick="go('salute')" style="cursor:pointer"><div class="ri" style="background:var(--coral-s);color:var(--coral)">${ic('heart',22)}</div><div class="rt"><b>Salute e dispositivi</b><small>passi e sonno da Apple Salute / Google Fit</small></div><div class="rv">›</div></div>
     <div class="row" onclick="go('badge')" style="cursor:pointer"><div class="ri" style="background:#fff0e0;color:#c8781f">${ic('shield',22)}</div><div class="rt"><b>Badge & Livello</b><small>livello ${levelInfo().lvl} · ${(S.badges||[]).length} badge · ${xpTotal()} XP</small></div><div class="rv">›</div></div>
     <div class="row" onclick="go('sfide')" style="cursor:pointer"><div class="ri" style="background:var(--coral-s);color:var(--coral)">${ic('flame',22)}</div><div class="rt"><b>Sfide</b><small>partecipa e sblocca traguardi</small></div><div class="rv">›</div></div>
     <div class="row" onclick="go('storia')" style="cursor:pointer"><div class="ri" style="background:var(--mint)">📋</div><div class="rt"><b>Storia clinica</b><small>personalizza il piano</small></div><div class="rv">›</div></div>
@@ -4721,12 +4785,12 @@ const BUILDERS={
   allenamento:allenamentoHTML, promemoria:promemoriaHTML, profilo:profiloHTML,
   planning:planningHTML, benessere:benessereHTML,
   community:communityHTML, frigo:frigoHTML, recupero:recuperoHTML,
-  detox:detoxHTML, digiuno:digiunoHTML, storia:storiaHTML, pro:proHTML, cloud:cloudHTML, admin:adminHTML, termini:terminiHTML, privacy:privacyHTML, ordini:ordiniHTML, clientchat:clientchatHTML, clientplans:clientplansHTML, score:scoreHTML, percorso:percorsoHTML, ricerca:ricercaHTML, sfide:sfideHTML, badge:badgeHTML, ricette:ricetteHTML,
+  detox:detoxHTML, digiuno:digiunoHTML, storia:storiaHTML, pro:proHTML, cloud:cloudHTML, admin:adminHTML, termini:terminiHTML, privacy:privacyHTML, ordini:ordiniHTML, clientchat:clientchatHTML, clientplans:clientplansHTML, score:scoreHTML, percorso:percorsoHTML, ricerca:ricercaHTML, sfide:sfideHTML, badge:badgeHTML, ricette:ricetteHTML, salute:saluteHTML,
   carrello:()=>''
 };
 function rebuild(id){const el=document.getElementById('sc-'+id);if(el&&BUILDERS[id])el.innerHTML=BUILDERS[id]();afterRender(id);}
 function afterRender(id){
-  if(id==='home'){renderHomeAppts();}
+  if(id==='home'){renderHomeAppts(); try{ if(healthBridge()&&S.healthConnected)syncHealth(true); }catch(e){}}
   if(id==='piano'){renderDislike();}
   if(id==='prenota'){
     if(isProMode()){ renderProAgenda(); }
@@ -4763,6 +4827,7 @@ function boot(){
   // se è rimasto un professionista "in verifica" (verifica auto interrotta), completala
   if(S.pro && S.pro.status==='in_verifica'){ setTimeout(verifyPro,600); }
   if(S.stepsConnected){ try{ startPedometer(); }catch(e){} }
+  try{ if(healthBridge()&&S.healthConnected)syncHealth(true); }catch(e){}
   // La PRIMA schermata è sempre login/registrazione, finché non si è loggati
   showAuthWall();
   // se l'utente inizia a scrivere le credenziali, non spostarlo più in automatico
