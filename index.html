@@ -489,6 +489,7 @@ const S = {
   recovery:false,
   stepsConnected:false,
   healthConnected:false, healthSource:null,
+  autoSave:true,
   workoutKcal:0,
   health:{interventi:"",diabete:"No",intolleranze:[],patologie:[],farmaci:"",gravidanza:false,note:""}
 };
@@ -554,14 +555,15 @@ function cartCount(){return S.cart.reduce((a,b)=>a+b.q,0);}
 
 /* ============ PERSISTENZA (salvataggio reale) ============ */
 let _cloudTimer=null;
-function save(){ try{ localStorage.setItem('aurea_data', JSON.stringify({S:S, POSTS:POSTS})); }catch(e){}
+function persistAutoSaveFlag(){ try{ localStorage.setItem('aurea_autosave', S.autoSave===false?'0':'1'); }catch(e){} }
+function save(){ if(S.autoSave===false){ persistAutoSaveFlag(); return; } try{ localStorage.setItem('aurea_data', JSON.stringify({S:S})); }catch(e){}
   if(cloudOn()&&cloudUser&&S.syncOn!==false){ clearTimeout(_cloudTimer); _cloudTimer=setTimeout(cloudSaveProfile,1500); } }
-function toggleSync(el){ S.syncOn=!(S.syncOn!==false); el.classList.toggle('on',S.syncOn); try{localStorage.setItem('aurea_data',JSON.stringify({S:S,POSTS:POSTS}));}catch(e){} if(S.syncOn&&cloudOn()&&cloudUser)cloudSaveProfile(); toast(S.syncOn?'Sincronizzazione attiva':'Sincronizzazione in pausa'); }
+function toggleAutoSave(el){ S.autoSave=!(S.autoSave!==false); if(el)el.classList.toggle('on',S.autoSave); persistAutoSaveFlag(); if(S.autoSave){ try{ localStorage.setItem('aurea_data',JSON.stringify({S:S})); }catch(e){} } toast(S.autoSave?'Salvataggio automatico attivo':'Salvataggio automatico disattivato · i dati non verranno più salvati finché non lo riattivi'); }
+function toggleSync(el){ S.syncOn=!(S.syncOn!==false); el.classList.toggle('on',S.syncOn); try{localStorage.setItem('aurea_data',JSON.stringify({S:S}));}catch(e){} if(S.syncOn&&cloudOn()&&cloudUser)cloudSaveProfile(); toast(S.syncOn?'Sincronizzazione attiva':'Sincronizzazione in pausa'); }
 function restore(){ try{
   const r=localStorage.getItem('aurea_data'); if(!r) return false;
   const o=JSON.parse(r);
   if(o.S) Object.keys(o.S).forEach(k=>{ S[k]=o.S[k]; });
-  if(o.POSTS && Array.isArray(o.POSTS)){ POSTS.length=0; o.POSTS.forEach(p=>POSTS.push(p)); }
   return true;
 }catch(e){ return false; } }
 function resetData(){ try{ localStorage.removeItem('aurea_data'); }catch(e){} location.reload(); }
@@ -622,14 +624,14 @@ function preloadCloud(){ renderNav(); if(S.pro && S.pro.status==='in_verifica'){
   cloudLoadProducts().then(()=>{ _prodLoaded=true; if(curScreen==='home')rebuild('home'); if(curScreen==='shop')rebuild('shop'); });
   cloudLoadDocs().then(()=>{ _docsLoaded=true; if(curScreen==='prenota')renderDocs('Tutti'); });
 }
-async function cloudCheckSession(){ if(!cloudOn())return null; try{ const {data}=await SB.auth.getSession(); cloudUser=data&&data.session?data.session.user:null; if(cloudUser) await cloudLoadProfile(); }catch(e){} return cloudUser; }
+async function cloudCheckSession(){ if(!cloudOn())return null; try{ const {data}=await SB.auth.getSession(); cloudUser=data&&data.session?data.session.user:null; if(cloudUser){ const had=await cloudLoadProfile(); if(!had) resetLocalIdentity(); } }catch(e){} return cloudUser; }
 async function cloudSignUp(email,pass){
   const {data,error}=await SB.auth.signUp({email,password:pass}); if(error) throw error;
   cloudUser=data.user; return data;
 }
 async function cloudSignIn(email,pass){
   const {data,error}=await SB.auth.signInWithPassword({email,password:pass}); if(error) throw error;
-  cloudUser=data.user; await cloudLoadProfile(); return data;
+  cloudUser=data.user; const had=await cloudLoadProfile(); if(!had){ resetLocalIdentity(); } return data;
 }
 async function cloudSignOut(){ try{ await SB.auth.signOut(); }catch(e){} cloudUser=null; }
 function minState(){ const {foodLog,...rest}=S; return rest; }
@@ -647,10 +649,17 @@ async function cloudSaveProfile(){
   }catch(e){}
 }
 async function cloudLoadProfile(){
-  if(!cloudOn()||!cloudUser)return;
+  if(!cloudOn()||!cloudUser)return false;
   try{ const {data,error}=await SB.from('profiles').select('data').eq('id',cloudUser.id).maybeSingle();
-    if(!error&&data&&data.data){ Object.keys(data.data).forEach(k=>{ if(k!=='foodLog') S[k]=data.data[k]; }); S.setup=true; }
+    if(!error&&data&&data.data){ Object.keys(data.data).forEach(k=>{ if(k!=='foodLog') S[k]=data.data[k]; }); S.setup=true; return true; }
   }catch(e){}
+  return false;
+}
+// azzera l'identità locale quando si entra in un account SENZA dati salvati,
+// così non resta il profilo di un utente precedente (es. dati di prova) sul dispositivo
+function resetLocalIdentity(){
+  S.user={name:"", initials:"", sex:"F", goal:"Dimagrimento", kcalGoal:1850, age:null, height:null};
+  S.pro=null; S.setup=false;
 }
 async function cloudUploadVideo(file,meta){
   if(!cloudOn()||!cloudUser) throw new Error('Accedi prima');
@@ -776,7 +785,15 @@ function finishOnboard(){
   else { go('home'); toast('Dieta personalizzata creata · ciao '+(S.user.name)+'! 🌿'); }
 }
 function skipOnboard(){S.setup=true;save();hideOnboard();go('home');}
-function logout(){S.setup=false;save();document.getElementById('onb-name').value='';showOnboard();}
+async function logout(){
+  confirmBox('Vuoi uscire e cambiare profilo? Verrai disconnesso dal tuo account su questo dispositivo.',async()=>{
+    try{ await cloudSignOut(); }catch(e){}
+    cloudUser=null;
+    // pulizia completa: niente profilo precedente che "resta appiccicato"
+    try{ localStorage.removeItem('aurea_data'); }catch(e){}
+    location.reload();
+  },{icon:'👋',yes:'Esci',no:'Annulla'});
+}
 
 /* ============ FOTOCAMERA reale ============ */
 function capturePhoto(cb,hint){
@@ -1524,10 +1541,10 @@ function openSlider(o){
   (document.querySelector('.phone')||document.body).appendChild(box);
 }
 function closeSlider(){ const b=document.getElementById('slider-panel'); if(b)b.remove(); }
-function setWaterHome(){ openSlider({title:"Bicchieri d'acqua oggi",min:0,max:20,step:1,value:S.water||0,unit:' bicchieri',onSet:function(n){ S.water=n; save(); rebuild('home'); rebuild('diario'); if(curScreen==='score')rebuild('score'); toast('Acqua: '+n+' bicchieri'); try{saveScoreToday();checkMilestones(true);}catch(e){} }}); }
-function setStepsManual(){ openSlider({title:'Passi di oggi',min:0,max:20000,step:500,value:S.steps||0,fmt:function(v){return v.toLocaleString('it-IT')+' passi';},onSet:function(n){ S.steps=n; if(n>=10000)S._ever10k=true; save(); rebuild('home'); if(curScreen==='score')rebuild('score'); toast('Passi: '+n.toLocaleString('it-IT')); try{saveScoreToday();checkMilestones(true);}catch(e){} }}); }
+function setWaterHome(){ openForm({title:"Bicchieri d'acqua oggi",subtitle:'Quanti bicchieri hai bevuto?',fields:[{id:'n',label:'Bicchieri',type:'number',value:(S.water||0)}],submit:'Salva',onSubmit:function(v){ let n=Math.round(parseFloat((''+v.n).replace(',','.'))); if(isNaN(n)||n<0){toast('Valore non valido');return false;} n=Math.min(n,40); S.water=n; save(); rebuild('home'); rebuild('diario'); if(curScreen==='score')rebuild('score'); if(curScreen==='salute')rebuild('salute'); toast('Acqua: '+n+' bicchieri'); try{saveScoreToday();checkMilestones(true);}catch(e){} }}); }
+function setStepsManual(){ openForm({title:'Passi di oggi',subtitle:'Inserisci i passi di oggi',fields:[{id:'n',label:'Passi',type:'number',value:(S.steps||0)}],submit:'Salva',onSubmit:function(v){ let n=Math.round(parseFloat((''+v.n).replace(',','.'))); if(isNaN(n)||n<0){toast('Valore non valido');return false;} n=Math.min(n,100000); S.steps=n; if(n>=10000)S._ever10k=true; save(); rebuild('home'); if(curScreen==='score')rebuild('score'); if(curScreen==='salute')rebuild('salute'); toast('Passi: '+n.toLocaleString('it-IT')); try{saveScoreToday();checkMilestones(true);}catch(e){} }}); }
 function sleepNeeded(){ const a=S.user.age||30; if(a<18) return {min:8,ideal:9}; if(a>64) return {min:7,ideal:8}; return {min:7,ideal:8}; }
-function setSleep(){ openSlider({title:'Ore di sonno stanotte',min:0,max:14,step:0.5,value:S.sleep||7,fmt:function(v){return v+'h';},onSet:function(h){ S.sleep=+(+h).toFixed(1); save(); rebuild('home'); if(curScreen==='score')rebuild('score'); const need=sleepNeeded(); toast(h<need.min?('Sonno: '+S.sleep+'h · sotto il consigliato, guarda i consigli'):('Sonno aggiornato: '+S.sleep+'h')); try{saveScoreToday();checkMilestones(true);}catch(e){} }}); }
+function setSleep(){ openForm({title:'Ore di sonno stanotte',subtitle:'Quanto hai dormito? (es. 7.5)',fields:[{id:'h',label:'Ore di sonno',type:'number',value:(S.sleep!=null?S.sleep:7)}],submit:'Salva',onSubmit:function(v){ let h=parseFloat((''+v.h).replace(',','.')); if(isNaN(h)||h<0||h>24){toast('Inserisci un valore tra 0 e 24');return false;} S.sleep=+h.toFixed(1); save(); rebuild('home'); if(curScreen==='score')rebuild('score'); if(curScreen==='salute')rebuild('salute'); const need=sleepNeeded(); toast(h<need.min?('Sonno: '+S.sleep+'h · sotto il consigliato'):('Sonno aggiornato: '+S.sleep+'h')); try{saveScoreToday();checkMilestones(true);}catch(e){} }}); }
 function sleepHabits(){ return ["📵 Niente schermi 1h prima","🕒 Orari regolari","☕ Stop caffeina dopo le 16","🌡️ Camera fresca e buia","🍵 Tisana rilassante","🧘 Respirazione prima di dormire"]; }
 function sleepAdvice(){
   const need=sleepNeeded(); const h=S.sleep||0;
@@ -3108,7 +3125,7 @@ function profiloHTML(){
   </div>
 
   <div class="card tight">
-    <div class="tog"><div class="ri" style="width:42px;height:42px;flex:0 0 42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px;background:var(--mint)">💾</div><div class="tt"><b>Salvataggio automatico</b><small>Peso, umore, carrello e diario restano salvati su questo dispositivo</small></div><div class="switch on"><i></i></div></div>
+    <div class="tog"><div class="ri" style="width:42px;height:42px;flex:0 0 42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px;background:var(--mint)">💾</div><div class="tt"><b>Salvataggio automatico</b><small>Peso, umore, carrello e diario restano salvati su questo dispositivo</small></div><div class="switch ${S.autoSave!==false?'on':''}" onclick="toggleAutoSave(this)"><i></i></div></div>
     <div class="row" onclick="confirmBox('Azzerare tutti i dati salvati su questo dispositivo?',resetData,{icon:'🗑️',yes:'Azzera',danger:true})" style="cursor:pointer"><div class="ri" style="background:var(--coral-s)">🗑️</div><div class="rt"><b style="color:#d63a5c">Azzera dati e ricomincia</b></div><div class="rv">›</div></div>
   </div>
 
@@ -4818,6 +4835,7 @@ function afterRender(id){
 }
 function boot(){
   restore();
+  try{ const af=localStorage.getItem('aurea_autosave'); if(af!=null) S.autoSave=(af!=='0'); }catch(e){}
   cloudInit();
   Object.keys(BUILDERS).forEach(id=>screen(id, BUILDERS[id]()));
   renderNav(); renderMenu();
