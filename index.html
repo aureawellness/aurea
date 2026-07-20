@@ -1052,6 +1052,9 @@ const SCORE_META={
   umore:{icn:'heart',col:'var(--coral)',bg:'var(--coral-s)',l:'Umore'},
   costanza:{icn:'flame',col:'#c8781f',bg:'#fff0e0',l:'Costanza'}
 };
+// azione al tocco di ogni voce del punteggio: porta dove si inserisce quel dato
+const SCORE_ACT={ alimentazione:"go('diario')", attivita:"setStepsManual()", sonno:"setSleep()", idratazione:"setWaterHome()", umore:"scrollMood()", costanza:"go('planning')" };
+function scrollMood(){ const c=document.getElementById('mood-card'); if(c){ c.scrollIntoView({behavior:'smooth',block:'center'}); c.style.transition='box-shadow .3s'; c.style.boxShadow='0 0 0 2px var(--green)'; setTimeout(()=>{c.style.boxShadow='';},1400); } }
 function _sc(v,a,b){ return Math.max(a,Math.min(b,v)); }
 function todayKey(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function scoreStreak(){ const h=(S.scoreHistory||[]).map(x=>x.date).slice().sort(); if(!h.length)return 0; let streak=1; for(let i=h.length-1;i>0;i--){ const diff=Math.round((new Date(h[i]+'T00:00')-new Date(h[i-1]+'T00:00'))/86400000); if(diff===1)streak++; else if(diff===0)continue; else break; } return streak; }
@@ -1111,15 +1114,15 @@ function scoreHTML(){
 
   <div class="card">
     <div class="h">Da cosa nasce il punteggio</div>
-    ${Object.keys(SCORE_W).map(k=>{ const m=SCORE_META[k]; const v=b[k]; const miss=v==null; const val=miss?0:v; return `<div class="row" style="align-items:center">
+    ${Object.keys(SCORE_W).map(k=>{ const m=SCORE_META[k]; const v=b[k]; const miss=v==null; const val=miss?0:v; return `<div class="row" style="align-items:center;cursor:pointer" onclick="${SCORE_ACT[k]}">
       <div class="ri" style="background:${m.bg};color:${m.col}">${ic(m.icn,20)}</div>
       <div class="rt" style="flex:1"><b>${m.l}</b><div class="bar" style="height:8px;margin-top:6px"><i style="width:${val}%;background:${m.col}"></i></div></div>
-      <div class="rv" style="min-width:52px;text-align:right">${miss?'<span class="sub" style="font-size:11px">da inserire</span>':'<b>'+v+'</b>'}</div>
+      <div class="rv" style="min-width:64px;text-align:right;display:flex;align-items:center;justify-content:flex-end;gap:6px">${miss?'<span class="sub" style="font-size:11px;color:var(--green-d);font-weight:700">inserisci</span>':'<b>'+v+'</b>'}<span style="color:var(--muted);font-size:18px">›</span></div>
     </div>`; }).join('')}
-    <div class="tiny" style="margin-top:8px">Se un dato manca non abbassa il punteggio: inseriscilo per uno Score più preciso.</div>
+    <div class="tiny" style="margin-top:8px">Tocca una voce per inserire il dato. Se un dato manca non abbassa il punteggio: inseriscilo per uno Score più preciso.</div>
   </div>
 
-  <div class="card">
+  <div class="card" id="mood-card">
     <div class="h">Come ti senti oggi?</div>
     <div class="chips" style="margin-top:6px">${[['😣',1],['😞',2],['😐',3],['🙂',4],['😀',5]].map(([e,v])=>`<button class="chip ${S.moodToday===v?'sel':''}" style="font-size:20px;padding:8px 12px" onclick="setMoodToday(${v})">${e}</button>`).join('')}</div>
   </div>
@@ -1458,10 +1461,10 @@ function openSlider(o){
   (document.querySelector('.phone')||document.body).appendChild(box);
 }
 function closeSlider(){ const b=document.getElementById('slider-panel'); if(b)b.remove(); }
-function setWaterHome(){ openSlider({title:"Bicchieri d'acqua oggi",min:0,max:20,step:1,value:S.water||0,unit:' bicchieri',onSet:function(n){ S.water=n; save(); rebuild('home'); rebuild('diario'); toast('Acqua: '+n+' bicchieri'); try{saveScoreToday();checkMilestones(true);}catch(e){} }}); }
-function setStepsManual(){ openSlider({title:'Passi di oggi',min:0,max:20000,step:500,value:S.steps||0,fmt:function(v){return v.toLocaleString('it-IT')+' passi';},onSet:function(n){ S.steps=n; if(n>=10000)S._ever10k=true; save(); rebuild('home'); toast('Passi: '+n.toLocaleString('it-IT')); try{saveScoreToday();checkMilestones(true);}catch(e){} }}); }
+function setWaterHome(){ openSlider({title:"Bicchieri d'acqua oggi",min:0,max:20,step:1,value:S.water||0,unit:' bicchieri',onSet:function(n){ S.water=n; save(); rebuild('home'); rebuild('diario'); if(curScreen==='score')rebuild('score'); toast('Acqua: '+n+' bicchieri'); try{saveScoreToday();checkMilestones(true);}catch(e){} }}); }
+function setStepsManual(){ openSlider({title:'Passi di oggi',min:0,max:20000,step:500,value:S.steps||0,fmt:function(v){return v.toLocaleString('it-IT')+' passi';},onSet:function(n){ S.steps=n; if(n>=10000)S._ever10k=true; save(); rebuild('home'); if(curScreen==='score')rebuild('score'); toast('Passi: '+n.toLocaleString('it-IT')); try{saveScoreToday();checkMilestones(true);}catch(e){} }}); }
 function sleepNeeded(){ const a=S.user.age||30; if(a<18) return {min:8,ideal:9}; if(a>64) return {min:7,ideal:8}; return {min:7,ideal:8}; }
-function setSleep(){ openSlider({title:'Ore di sonno stanotte',min:0,max:14,step:0.5,value:S.sleep||7,fmt:function(v){return v+'h';},onSet:function(h){ S.sleep=+(+h).toFixed(1); save(); rebuild('home'); const need=sleepNeeded(); toast(h<need.min?('Sonno: '+S.sleep+'h · sotto il consigliato, guarda i consigli'):('Sonno aggiornato: '+S.sleep+'h')); try{saveScoreToday();checkMilestones(true);}catch(e){} }}); }
+function setSleep(){ openSlider({title:'Ore di sonno stanotte',min:0,max:14,step:0.5,value:S.sleep||7,fmt:function(v){return v+'h';},onSet:function(h){ S.sleep=+(+h).toFixed(1); save(); rebuild('home'); if(curScreen==='score')rebuild('score'); const need=sleepNeeded(); toast(h<need.min?('Sonno: '+S.sleep+'h · sotto il consigliato, guarda i consigli'):('Sonno aggiornato: '+S.sleep+'h')); try{saveScoreToday();checkMilestones(true);}catch(e){} }}); }
 function sleepHabits(){ return ["📵 Niente schermi 1h prima","🕒 Orari regolari","☕ Stop caffeina dopo le 16","🌡️ Camera fresca e buia","🍵 Tisana rilassante","🧘 Respirazione prima di dormire"]; }
 function sleepAdvice(){
   const need=sleepNeeded(); const h=S.sleep||0;
