@@ -2916,34 +2916,81 @@ function playVideo(url){
 }
 
 /* ---------- PROMEMORIA ---------- */
+/* ===== NOTIFICHE (Fase 3) ===== */
+function notifStatus(){ return ('Notification' in window)?Notification.permission:'unsupported'; }
+function notify(title,body,tag){
+  try{ if(notifStatus()!=='granted')return false;
+    if(navigator.serviceWorker&&navigator.serviceWorker.ready){ navigator.serviceWorker.ready.then(reg=>{ try{reg.showNotification(title,{body:body||'',tag:tag||'aurea',icon:'icon-192.png',badge:'icon-192.png',vibrate:[80,40,80]});}catch(e){ try{new Notification(title,{body,tag,icon:'icon-192.png'});}catch(_){} } }).catch(()=>{ try{new Notification(title,{body,tag,icon:'icon-192.png'});}catch(e){} }); }
+    else { new Notification(title,{body:body||'',tag:tag||'aurea',icon:'icon-192.png'}); }
+    return true;
+  }catch(e){ return false; }
+}
+async function enableNotifications(){
+  if(!('Notification' in window)){ toast('Notifiche non supportate su questo browser'); return; }
+  if(Notification.permission==='granted'){ notify('Notifiche già attive ✓','Ti avviserò agli orari che imposti.','welcome'); S._notifOn=true; save(); rebuild('promemoria'); return; }
+  if(Notification.permission==='denied'){ confirmBox('Le notifiche sono bloccate. Per riceverle, abilitale nelle impostazioni del browser o del telefono alla voce Auréa.',()=>{},{icon:'🔔',yes:'Ho capito',no:'Chiudi'}); return; }
+  try{ const p=await Notification.requestPermission(); if(p==='granted'){ notify('Notifiche attive ✓','Ti avviserò per acqua, pasti, sonno e videoconsulenze.','welcome'); S._notifOn=true; save(); } else { toast('Permesso notifiche non concesso'); } rebuild('promemoria'); }catch(e){ toast('Impossibile attivare: '+(e.message||e)); }
+}
+function _remMins(hhmm){ const m=(hhmm||'').match(/(\d{1,2}):(\d{2})/); return m?(+m[1]*60 + +m[2]):null; }
+function remTime(r){ if(r.time)return r.time; const m=(r.d||'').match(/(\d{1,2}):(\d{2})/); return m?(m[1].padStart(2,'0')+':'+m[2]):null; }
+function checkReminders(){
+  if(notifStatus()!=='granted')return;
+  const now=new Date(); const nowM=now.getHours()*60+now.getMinutes(); const dk=todayKey(); let dirty=false;
+  (S.reminders||[]).forEach(r=>{ if(!r.on)return; const tm=_remMins(remTime(r)); if(tm==null)return; if(r._fired!==dk && nowM>=tm && nowM<tm+2){ r._fired=dk; notify('⏰ '+r.t, r.d||'Promemoria Auréa','rem-'+(r.t||'')); dirty=true; } });
+  (S.appointments||[]).forEach(a=>{ if(!/online|video/i.test(a.mode||''))return; if(!a.date||!a.time)return; let dt; try{dt=new Date(a.date+'T'+a.time);}catch(e){return;} const diff=(dt-now)/60000; const key=a.date+a.time; if(diff>0&&diff<=60&&a._notif1h!==key){ a._notif1h=key; notify('🎥 Videoconsulenza in arrivo', a.who+' · alle '+a.time+' · apri Auréa per entrare','appt'); dirty=true; } });
+  if(dirty){try{save();}catch(e){}}
+}
 function promemoriaHTML(){
+  const st=notifStatus(); const on=st==='granted';
+  const banner = st==='unsupported'
+    ? `<div class="alert info"><span>🔔</span><div>Questo browser non supporta le notifiche. Nella futura app nativa arriveranno anche a schermo spento.</div></div>`
+    : on
+      ? `<div class="alert ok"><span>✅</span><div><b>Notifiche attive.</b> Ti avviso agli orari dei promemoria e 1 ora prima delle videoconsulenze. Tieni Auréa aperta o installala sul telefono per riceverle in modo affidabile.</div></div>`
+      : `<div class="card" style="border:1.5px solid var(--green);box-shadow:none;background:var(--mint)"><div class="h" style="font-size:14px">🔔 Attiva le notifiche</div><div class="sub" style="margin-bottom:10px">Ricevi avvisi per acqua, pasti, sonno, allenamenti e videoconsulenze.</div><button class="btn sm" onclick="enableNotifications()">Attiva ora</button></div>`;
   return `
   <button class="back" onclick="go('home')">← Indietro</button>
   <div class="topbar" style="padding-top:0"><div class="hello"><div class="k">Tutto in un posto</div><div class="n">⏰ Promemoria</div></div></div>
 
-  <div class="alert info"><span>🔔</span><div>Ti avviso per integratori, acqua, pasti, allenamenti e appuntamenti medici/estetici. Sincronizzati col tuo calendario.</div></div>
+  ${banner}
 
   <div class="card" id="rem-list"></div>
+
+  <div class="section-title">Aggiungi in un tocco</div>
+  <div class="quick" style="margin-bottom:14px">
+    <button class="qa" onclick="quickReminder('acqua')"><span class="qi" style="background:#e8f6ff;color:#2a9adf">${ic('drop',22)}</span>Acqua</button>
+    <button class="qa" onclick="quickReminder('pasti')"><span class="qi" style="background:var(--mint);color:var(--green-d)">${ic('piano',22)}</span>Pasti</button>
+    <button class="qa" onclick="quickReminder('sonno')"><span class="qi" style="background:var(--violet-s);color:var(--violet)">${ic('moon',22)}</span>Sonno</button>
+    <button class="qa" onclick="quickReminder('workout')"><span class="qi" style="background:#fff0e0;color:#c8781f">${ic('dumbbell',22)}</span>Workout</button>
+  </div>
 
   <button class="btn ghost" onclick="addReminder()">＋ Nuovo promemoria</button>
   `;
 }
+function quickReminder(kind){
+  const P={ acqua:{t:'Bevi un bicchiere d\'acqua',d:'Idratazione',time:'11:00',ic:'💧'}, pasti:{t:'Registra il pasto',d:'Diario alimentare',time:'13:00',ic:'🍽️'}, sonno:{t:'Prepara il riposo',d:'Punta a 7-8 ore',time:'22:30',ic:'😴'}, workout:{t:'Muoviti un po\'',d:'Allenamento del giorno',time:'18:00',ic:'🏋️'} };
+  const p=P[kind]; if(!p)return; S.reminders.push({t:p.t,d:p.d+' · '+p.time,time:p.time,on:true,ic:p.ic,c:'var(--green)'}); save(); renderReminders(); toast('Promemoria aggiunto alle '+p.time); if(notifStatus()!=='granted')enableNotifications(); }
 function renderReminders(){
   const c=document.getElementById('rem-list'); if(!c)return;
-  c.innerHTML=S.reminders.map((r,i)=>`
+  c.innerHTML=S.reminders.map((r,i)=>{ const t=remTime(r); return `
     <div class="tog">
       <div class="ri" style="width:42px;height:42px;flex:0 0 42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px;background:var(--mint)">${r.ic}</div>
-      <div class="tt"><b>${r.t}</b><small>${r.d}</small></div>
+      <div class="tt" onclick="editReminderTime(${i})" style="cursor:pointer"><b>${r.t}</b><small>${r.d}${t?'':' · imposta orario'}</small></div>
+      ${t?`<button onclick="editReminderTime(${i})" style="background:var(--mint);border:none;color:var(--green-d);font-weight:700;font-size:12px;border-radius:10px;padding:5px 9px;cursor:pointer;margin-right:4px">🕐 ${t}</button>`:''}
       <button onclick="rmReminder(${i})" style="background:none;border:none;color:var(--coral);font-size:16px;cursor:pointer;margin-right:2px">🗑</button>
       <div class="switch ${r.on?'on':''}" onclick="toggleRem(${i},this)"><i></i></div>
-    </div>`).join('') || '<div class="sub">Nessun promemoria. Tocca "Nuovo promemoria" per crearne uno.</div>';
+    </div>`; }).join('') || '<div class="sub">Nessun promemoria. Tocca "Nuovo promemoria" per crearne uno.</div>';
 }
+function editReminderTime(i){ const r=S.reminders[i]; if(!r)return; openForm({title:'Orario promemoria',subtitle:r.t,
+  fields:[{id:'time',label:'A che ora avvisarti?',type:'time',value:remTime(r)||'20:00'}],
+  submit:'Salva orario',
+  onSubmit:(v)=>{ if(!v.time){toast('Scegli un orario');return false;} r.time=v.time; r._fired=null; if(!/\d{1,2}:\d{2}/.test(r.d||''))r.d=(r.d&&r.d!=='—'?r.d+' · ':'')+v.time; save(); renderReminders(); toast('Orario impostato: '+v.time); if(notifStatus()!=='granted')enableNotifications(); }
+}); }
 function toggleRem(i,el){S.reminders[i].on=!S.reminders[i].on;el.classList.toggle('on');save();toast(S.reminders[i].on?'Promemoria attivo':'Promemoria disattivato');}
 function rmReminder(i){ confirmBox('Eliminare questo promemoria?',()=>{ S.reminders.splice(i,1); save(); renderReminders(); toast('Promemoria eliminato'); },{icon:'🔔',yes:'Elimina',danger:true}); }
 function addReminder(){ openForm({title:'Nuovo promemoria',
-  fields:[ {id:'t',label:'Cosa vuoi ricordarti?',ph:'es. Bere acqua'}, {id:'d',label:'Quando?',ph:'es. Oggi · 20:00 oppure ogni 2 ore',value:'Oggi · 20:00'} ],
+  fields:[ {id:'t',label:'Cosa vuoi ricordarti?',ph:'es. Bere acqua'}, {id:'time',label:'A che ora?',type:'time',value:'20:00'}, {id:'d',label:'Nota (facoltativa)',ph:'es. dopo cena'} ],
   submit:'Crea promemoria',
-  onSubmit:(v)=>{ if(!v.t||!v.t.trim()){toast('Scrivi il promemoria');return false;} S.reminders.push({t:v.t.trim(),d:(v.d||'').trim()||'—',on:true,ic:'⭐',c:'var(--green)'}); save(); renderReminders(); toast('Promemoria creato (attivo)'); } }); }
+  onSubmit:(v)=>{ if(!v.t||!v.t.trim()){toast('Scrivi il promemoria');return false;} const time=v.time||'20:00'; const note=(v.d||'').trim(); S.reminders.push({t:v.t.trim(),d:(note?note+' · ':'')+time,time:time,on:true,ic:'⭐',c:'var(--green)'}); save(); renderReminders(); toast('Promemoria creato per le '+time); if(notifStatus()!=='granted')enableNotifications(); } }); }
 
 /* ---------- PROFILO ---------- */
 function profiloHTML(){
@@ -4726,7 +4773,8 @@ function boot(){
   }
   // clock
   function tick(){const el=document.getElementById('clock');if(el)el.textContent=new Date().getHours()+':'+String(new Date().getMinutes()).padStart(2,'0');
-    if(S.fasting && document.getElementById('sc-digiuno') && document.getElementById('sc-digiuno').classList.contains('active')) fastStatus();}
+    if(S.fasting && document.getElementById('sc-digiuno') && document.getElementById('sc-digiuno').classList.contains('active')) fastStatus();
+    try{checkReminders();}catch(e){}}
   tick();setInterval(tick,20000);
 }
 boot();
