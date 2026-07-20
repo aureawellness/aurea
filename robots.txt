@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://aureawellness.github.io/aurea/sitemap.xml
