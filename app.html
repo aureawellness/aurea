@@ -4943,12 +4943,17 @@ const PROFS=[
 function profByName(v){return PROFS.find(p=>p.v===v)||PROFS[0];}
 /* ===== VERIFICA TITOLI / ALBI / P.IVA ===== */
 // Link ai registri ufficiali (per il controllo manuale dell'admin)
-const ALBO_LINKS={
-  'Ordine Nazionale dei Biologi (ONB)':'https://www.onb.it/albo/',
-  'Ordine dei Medici (OMCeO / FNOMCeO)':'https://portale.fnomceo.it/cerca-prof/',
-  'Ordine degli Psicologi (regionale)':'https://www.psy.it/cerca-un-professionista/'
+// Parole chiave per trovare il registro ufficiale con una ricerca (i link diretti agli albi cambiano e si rompono)
+const ALBO_QUERY={
+  'Ordine Nazionale dei Biologi (ONB)':'albo unico nazionale biologi ONB ricerca iscritto',
+  'Ordine dei Medici (OMCeO / FNOMCeO)':'FNOMCeO albo unico nazionale medici ricerca professionista',
+  'Ordine degli Psicologi (regionale)':'albo psicologi ricerca iscritto ordine psicologi'
 };
-function verRegisterLink(v){ const direct=ALBO_LINKS[v.ente]; if(direct)return direct; const q=encodeURIComponent(((v.ente||v.profession||'albo')+' '+(v.name||'')+' '+(v.albo_number||'')).trim()); return 'https://www.google.com/search?q='+q; }
+function verRegisterLink(v){
+  const base=ALBO_QUERY[v.ente]||((v.ente||v.profession||'albo')+' ricerca iscritto');
+  const q=encodeURIComponent((base+' '+(v.name||'')+' '+(v.albo_number||'')).trim());
+  return 'https://www.google.com/search?q='+q;
+}
 // Validazione P.IVA italiana (11 cifre + checksum)
 function isFornitoreProf(v){ return /fornitore/i.test(v||''); }
 function validaPIVA(p){ p=(''+p).replace(/[^0-9]/g,''); if(!/^[0-9]{11}$/.test(p))return false; let s=0; for(let i=0;i<11;i++){ let n=+p[i]; if(i%2===1){ n*=2; if(n>9)n-=9; } s+=n; } return s%10===0; }
