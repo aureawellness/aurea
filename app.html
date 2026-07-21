@@ -562,7 +562,7 @@ function ring(pct,color,size=120,sw=13){
 }
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2200);try{save();}catch(e){}}
 let curScreen=null;
-const REFRESH_ON_SHOW=['home','piano','prenota','diario','digiuno','pro','profilo','detox','storia','benessere','allenamento','addfood','scanner','ciclo','planning','shop','admin','ordini','privacy','clientchat','clientplans','score','percorso','ricerca','sfide','badge','ricette','salute'];
+const REFRESH_ON_SHOW=['home','piano','prenota','diario','digiuno','pro','profilo','detox','storia','benessere','allenamento','addfood','scanner','ciclo','planning','shop','admin','ordini','privacy','clientchat','clientplans','score','percorso','ricerca','sfide','badge','ricette','salute','dirette'];
 function go(id){
   const changing = curScreen!==id;
   if(changing && REFRESH_ON_SHOW.includes(id) && BUILDERS[id] && document.getElementById('sc-'+id)){ rebuild(id); }
@@ -1032,7 +1032,8 @@ const ICONS={
  egg:'<path d="M12 3.5c3 0 5.5 4.5 5.5 8.5a5.5 5.5 0 0 1-11 0C6.5 8 9 3.5 12 3.5z"/>',
  fish:'<path d="M4 12c3-4 9-5 13-3 2 1 3 3 3 3s-1 2-3 3c-4 2-10 1-13-3z"/><path d="M16 12h.01"/><path d="M4 12c-1 1-1 3 0 4M4 12c-1-1-1-3 0-4"/>',
  meat:'<circle cx="9" cy="9" r="5"/><path d="M12.5 12.5 20 20M9 9l2 2"/>',
- leaf:'<path d="M5 19C5 11 11 5 19 5c0 8-6 14-14 14z"/><path d="M5 19c3-6 7-9 11-11"/>'
+ leaf:'<path d="M5 19C5 11 11 5 19 5c0 8-6 14-14 14z"/><path d="M5 19c3-6 7-9 11-11"/>',
+ video:'<rect x="3" y="6" width="12" height="12" rx="2.5"/><path d="M15 10l5-3v10l-5-3z"/>'
 };
 function ic(name,size){ size=size||22; const p=ICONS[name]||ICONS.grid; return `<svg class="ico-svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="display:block">${p}</svg>`; }
 
@@ -1092,9 +1093,9 @@ function confirmBox(msg,onYes,opts){
 }
 const NAV=[
   {id:'home',icn:'home',l:'Home'},
-  {id:'piano',icn:'piano',l:'Piano'},
-  {id:'planning',icn:'calendar',l:'Calendario'},
-  {id:'benessere',icn:'heart',l:'Benessere'},
+  {id:'prenota',icn:'cross',l:'Prenota'},
+  {id:'dirette',icn:'video',l:'Dirette'},
+  {id:'community',icn:'users',l:'Community'},
   {id:'menu',icn:'menu',l:'Menu',menu:true},
   {id:'profilo',icn:'user',l:'Profilo'}
 ];
@@ -1118,34 +1119,23 @@ function renderCartBadge(){
 }
 /* menu con tutte le funzioni */
 const MENU=[
-  {id:'score',icn:'sparkle',l:'Aurea Score'},
-  {id:'percorso',icn:'heart',l:'Percorso'},
-  {id:'ricerca',icn:'grid',l:'Ricerca'},
-  {id:'sfide',icn:'flame',l:'Sfide'},
-  {id:'badge',icn:'shield',l:'Badge'},
-  {id:'community',icn:'users',l:'Community'},
+  {id:'prenota',icn:'cross',l:'Prenota'},
+  {id:'dirette',icn:'video',l:'Dirette'},
+  {id:'allenamento',icn:'dumbbell',l:'Allenamenti'},
   {id:'ricette',icn:'bowl',l:'Ricette'},
-  {id:'ciclo',icn:'flower',l:'Ciclo',fem:true},
-  {id:'salute',icn:'heart',l:'Salute'},
-  {id:'recupero',icn:'rainbow',l:'Recupero'},
-  {id:'detox',icn:'cup',l:'Detox'},
-  {id:'digiuno',icn:'hourglass',l:'Digiuno'},
-  {id:'storia',icn:'clipboard',l:'Storia clinica'},
-  {id:'diario',icn:'book',l:'Diario'},
-  {id:'scanner',icn:'camera',l:'Scanner'},
-  {id:'frigo',icn:'fridge',l:'Frigo'},
+  {id:'community',icn:'users',l:'Community'},
+  {id:'ricerca',icn:'grid',l:'Ricerca'},
   {id:'shop',icn:'bag',l:'Integratori'},
   {id:'carrello',icn:'cart',l:'Carrello'},
-  {id:'prenota',icn:'cross',l:'Prenota'},
+  {id:'ciclo',icn:'flower',l:'Ciclo',fem:true,usr:true},
   {id:'coach',icn:'robot',l:'Coach AI'},
-  {id:'allenamento',icn:'dumbbell',l:'Workout'},
   {id:'promemoria',icn:'bell',l:'Promemoria'},
-  {id:'pro',icn:'shield',l:'Professionisti'},
-  {id:'cloud',icn:'cloud',l:'Cloud'}
+  {id:'pro',icn:'shield',l:'Area pro'},
+  {id:'cloud',icn:'cloud',l:'Account'}
 ];
 function renderMenu(){
   const g=document.getElementById('menu-grid'); if(!g)return;
-  g.innerHTML=MENU.filter(m=>!(m.fem&&!cycleOn())).map(m=>
+  g.innerHTML=MENU.filter(m=>!(m.fem&&!cycleOn())).filter(m=>!(m.usr&&isProMode())).map(m=>
     `<button class="qa" onclick="menuGo('${m.id}')"><span class="qi" style="background:var(--mint);color:var(--green-d)">${ic(m.icn,24)}</span>${m.l}</button>`
   ).join('');
 }
@@ -1417,103 +1407,40 @@ function badgeHTML(){
 }
 function homeHTML(){
   if(isProMode()) return proDashHTML();
-  const wp=weightPlan();
-  const burned=burnedToday();
-  const kc=S.intake.kcal, kg=S.user.kcalGoal, left=kg-kc+burned;
   return `
   <div class="topbar">
-    <div class="hello"><div class="k">Domenica, 19 luglio</div><div class="n">Ciao, ${S.user.name} <span style="color:var(--amber);vertical-align:-3px;display:inline-block">${ic('sparkle',19)}</span></div></div>
+    <div class="hello"><div class="k">Il tuo benessere</div><div class="n">Ciao, ${S.user.name||'benvenuta'} <span style="color:var(--amber);vertical-align:-3px;display:inline-block">${ic('sparkle',19)}</span></div></div>
     <div class="avatar" onclick="go('profilo')">${S.user.initials}</div>
   </div>
 
-  ${scoreCardHome()}
+  <div class="banner gg" onclick="go('prenota')" style="cursor:pointer"><span class="b-ic" style="opacity:.2">${ic('cross',78)}</span><h4>Trova il tuo professionista</h4><p>Nutrizionisti, medici e trainer verificati: prenota, fai videoconsulti e chatta con loro.</p></div>
 
-  <div class="card">
-    <div class="ring-wrap">
-      <div class="ring">${ring(kc/(kg+burned||1),'var(--green)')}
-        <div class="c-val"><b>${left>0?left:0}</b><small>kcal rimaste</small></div></div>
-      <div class="macros">
-        <div class="macro"><div class="lbl"><span>Introdotte</span><span>${kc} kcal</span></div><div class="bar"><i style="width:${Math.min(100,kc/kg*100)}%;background:var(--green)"></i></div></div>
-        <div class="macro"><div class="lbl"><span>🔥 Bruciate</span><span>${burned} kcal</span></div><div class="bar"><i style="width:${Math.min(100,burned/500*100)}%;background:var(--coral)"></i></div></div>
-        <div class="macro"><div class="lbl"><span>Obiettivo</span><span>${kg} kcal</span></div><div class="bar"><i style="width:100%;background:var(--line)"></i></div></div>
-      </div>
-    </div>
-    <div class="sub" style="margin-top:12px;text-align:center">🔥 Oggi hai bruciato <b>${burned} kcal</b> (${kcalFromSteps()} dai passi${S.workoutKcal?' + '+S.workoutKcal+' allenamento':''}) — sommate al tuo budget${S.workoutKcal?` · <a onclick="resetBurned()" style="color:var(--green-d);cursor:pointer">azzera</a>`:''}</div>
-  </div>
-
-  <div class="grid3" style="margin-bottom:${S.stepsConnected?'16px':'8px'}">
-    <div class="stat" onclick="setStepsManual()" style="cursor:pointer"><div class="ico" style="background:#e8f1ff;color:var(--blue)">${ic('steps',20)}</div><div class="v" id="steps-val">${((S.steps||0)/1000).toFixed(1)}k</div><div class="l">Passi · tocca</div></div>
-    <div class="stat" onclick="setWaterHome()" style="cursor:pointer"><div class="ico" style="background:#e8f6ff;color:#2a9adf">${ic('drop',20)}</div><div class="v">${S.water}/${S.waterGoal}</div><div class="l">Acqua · tocca</div></div>
-    <div class="stat" onclick="setSleep()" style="cursor:pointer"><div class="ico" style="background:var(--violet-s);color:var(--violet)">${ic('moon',20)}</div><div class="v">${S.sleep?S.sleep+'h':'—'}</div><div class="l">Sonno · tocca</div></div>
-  </div>
-  ${S.stepsConnected?'':`<button class="btn ghost sm" style="margin-bottom:16px" onclick="connectSteps()"><span style="vertical-align:-4px;display:inline-block;margin-right:4px">${ic('steps',18)}</span> Connetti il contapassi automatico</button>`}
-
-  <div class="section-title">Obiettivo peso <span class="more" onclick="go('piano')">Adatta piano</span></div>
-  <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-      <div><div style="font-size:26px;font-weight:800">${S.wNow} <small style="font-size:13px;color:var(--muted);font-weight:600">kg</small></div><div class="sub">da ${S.wStart} kg → obiettivo ${S.wGoal} kg</div></div>
-      <div style="text-align:right"><div style="font-size:20px;font-weight:800;color:var(--green-d)">${wp.toLose>0?'-'+wp.toLose:(wp.toLose<0?'+'+Math.abs(wp.toLose):'0')} kg</div><div class="sub">${wp.toLose>0?'da perdere':(wp.toLose<0?'da aumentare':'raggiunto ✓')}</div></div>
-    </div>
-    <div class="bar" style="height:12px;margin:10px 0 6px"><i style="width:${(wp.progress*100).toFixed(0)}%;background:linear-gradient(90deg,var(--green),#4bd4a6)"></i></div>
-    <div style="display:flex;justify-content:space-between" class="sub"><span>${(wp.progress*100).toFixed(0)}% del percorso</span><span>${wp.done>0?wp.done+' kg fatti':''}</span></div>
-    <div class="alert ok" style="margin:14px 0 0"><span>🎯</span><div>Per raggiungere <b>${S.wGoal} kg</b> l'AI imposta <b>${wp.kcal} kcal/giorno</b> (${wp.dailyDelta>0?'-'+wp.dailyDelta:'+'+Math.abs(wp.dailyDelta)} kcal) → ~${wp.weeklyKg} kg/settimana. Stima: <b>${wp.etaWeeks} settimane</b>.</div></div>
-    <button class="btn sm sec" style="margin-top:12px" onclick="editWeight()">✏️ Aggiorna peso di oggi</button>
-  </div>
-
-  <div class="section-title">Accesso rapido</div>
+  <div class="section-title">Cosa vuoi fare oggi</div>
   <div class="quick" style="margin-bottom:8px">
-    <button class="qa" onclick="go('diario')"><span class="qi" style="background:var(--mint);color:var(--green-d)">${ic('book',24)}</span>Diario</button>
-    <button class="qa" onclick="go('scanner')"><span class="qi" style="background:#e8f1ff;color:var(--blue)">${ic('camera',24)}</span>Scanner</button>
-    <button class="qa" onclick="go('coach')"><span class="qi" style="background:var(--violet-s);color:var(--violet)">${ic('robot',24)}</span>Coach AI</button>
-    <button class="qa" onclick="go('frigo')"><span class="qi" style="background:#e8f6ff;color:#2a9adf">${ic('fridge',24)}</span>Frigo</button>
+    <button class="qa" onclick="go('prenota')"><span class="qi" style="background:var(--mint);color:var(--green-d)">${ic('cross',24)}</span>Prenota</button>
+    <button class="qa" onclick="go('dirette')"><span class="qi" style="background:var(--coral-s);color:var(--coral)">${ic('video',24)}</span>Dirette</button>
+    <button class="qa" onclick="go('allenamento')"><span class="qi" style="background:#e8f1ff;color:var(--blue)">${ic('dumbbell',24)}</span>Allenamenti</button>
+    <button class="qa" onclick="go('ricette')"><span class="qi" style="background:#fff0e0;color:#c8781f">${ic('bowl',24)}</span>Ricette</button>
   </div>
   <div class="quick">
-    ${cycleOn()?`<button class="qa" onclick="go('ciclo')"><span class="qi" style="background:var(--coral-s);color:var(--coral)">${ic('flower',24)}</span>Ciclo</button>`:`<button class="qa" onclick="go('allenamento')"><span class="qi" style="background:var(--coral-s);color:var(--coral)">${ic('dumbbell',24)}</span>Forma</button>`}
-    <button class="qa" onclick="go('community')"><span class="qi" style="background:#fff0e0;color:#c8781f">${ic('users',24)}</span>Community</button>
-    <button class="qa" onclick="go('shop')"><span class="qi" style="background:var(--mint);color:var(--green-d)">${ic('bag',24)}</span>Integr.</button>
+    <button class="qa" onclick="go('community')"><span class="qi" style="background:var(--violet-s);color:var(--violet)">${ic('users',24)}</span>Community</button>
+    <button class="qa" onclick="go('shop')"><span class="qi" style="background:var(--mint);color:var(--green-d)">${ic('bag',24)}</span>Integratori</button>
+    ${cycleOn()?`<button class="qa" onclick="go('ciclo')"><span class="qi" style="background:var(--coral-s);color:var(--coral)">${ic('flower',24)}</span>Ciclo</button>`:`<button class="qa" onclick="go('ricerca')"><span class="qi" style="background:#e8f6ff;color:#2a9adf">${ic('grid',24)}</span>Cerca</button>`}
     <button class="qa" onclick="openMenu()"><span class="qi" style="background:var(--violet-s);color:var(--violet)">${ic('grid',24)}</span>Tutto</button>
   </div>
-  <div class="tiny" style="margin-top:8px">Trovi tutte le funzioni nel Menu in basso.</div>
+
+  <div id="home-live"></div>
 
   <div class="section-title">Prossimi appuntamenti <span class="more" onclick="go('prenota')">Vedi tutti</span></div>
   <div class="card tight" id="home-appts"></div>
 
-  ${cycleOn()?`<div class="banner gp" onclick="go('ciclo')" style="margin-top:16px;cursor:pointer">
-    <span class="b-ic">🌸</span>
-    <h4>Fase ${cyclePhase().n.toLowerCase()} · giorno ${cycleDayNum()}</h4>
-    <p>${cyclePhase().txt} Tocca per impostare il ciclo e le voglie.</p>
-  </div>`:''}
+  ${cycleOn()?`<div class="banner gp" onclick="go('ciclo')" style="margin-top:16px;cursor:pointer"><span class="b-ic">🌸</span><h4>Il tuo ciclo</h4><p>Tocca per seguire il ciclo e le sue fasi.</p></div>`:''}
 
-  <div class="section-title">Il tuo oggi <span class="more" onclick="go('planning')">Planning →</span></div>
-  <div class="card tight">
-    <div class="row" onclick="go('planning')" style="cursor:pointer;padding:8px 0">
-      <div class="ri" style="background:#e8f1ff;color:var(--blue)">${ic('calendar',22)}</div>
-      <div class="rt"><b>${S.today.filter(x=>x.done).length}/${S.today.length} attività completate</b><small>pasti, integratori, workout e appuntamenti</small></div>
-      <div class="rv">›</div>
-    </div>
-    <div class="row" onclick="go('benessere')" style="cursor:pointer;padding:8px 0">
-      <div class="ri" style="background:var(--mint);color:var(--green-d)">${ic('heart',22)}</div>
-      <div class="rt"><b>Come ti senti oggi?</b><small>Registra umore e pensieri</small></div>
-      <div class="rv">›</div>
-    </div>
-    <div class="row" onclick="go('recupero')" style="cursor:pointer;padding:8px 0;border-bottom:none">
-      <div class="ri" style="background:var(--coral-s);color:var(--coral)">${ic('rainbow',22)}</div>
-      <div class="rt"><b>Hai sgarrato? Riparti qui</b><small>Supporto e piano per rimettersi in carreggiata</small></div>
-      <div class="rv">›</div>
-    </div>
-  </div>
+  <div class="section-title">Lavori nel benessere?</div>
+  <div class="card"><div class="row" onclick="go('pro')" style="cursor:pointer"><div class="ri" style="background:var(--mint);color:var(--green-d)">${ic('shield',22)}</div><div class="rt"><b>Diventa professionista</b><small>Registrati e lavora su Aur\u00e9a: agenda, clienti, dirette</small></div><div class="rv">\u203a</div></div></div>
 
-  <div class="section-title">Consiglio del giorno</div>
-  <div class="card">
-    <div class="alert ok" style="margin:0"><span>💡</span><div><b>Idratazione.</b> Ti mancano 3 bicchieri d'acqua per l'obiettivo. Ti ho impostato un promemoria alle 16:00.</div></div>
-  </div>
-
-  <div class="banner gp" onclick="go('community')" style="cursor:pointer">
-    <span class="b-ic">👥</span><h4>La community ti aspetta</h4><p>2.4k persone come te: ricette, consigli e supporto. 12 nuovi post oggi.</p>
-  </div>
-
-  <div class="section-title">Integratori consigliati per te</div>
-  ${suppRecoCard('In base al tuo percorso','Collegati a obiettivo peso, fase del ciclo ed energia di oggi:','home')}
+  <div class="section-title">Integratori consigliati</div>
+  ${suppRecoCard('Selezionati per te','Scopri gli integratori consigliati dai professionisti:','home')}
   `;
 }
 function renderHomeAppts(){
@@ -2372,8 +2299,48 @@ function openVideoCall(room,name){
   if(window.JitsiMeetExternalAPI){ start(); }
   else { const s=document.createElement('script'); s.src='https://meet.jit.si/external_api.js'; s.onload=start; s.onerror=fallback; document.head.appendChild(s); }
 }
-function closeVideoCall(){ try{ if(window._jitsi){window._jitsi.dispose();window._jitsi=null;} }catch(e){} const b=document.getElementById('video-panel'); if(b)b.remove(); }
+function closeVideoCall(){ try{ if(window._jitsi){window._jitsi.dispose();window._jitsi=null;} }catch(e){} const b=document.getElementById('video-panel'); if(b)b.remove();
+  if(window._hostingLive){ window._hostingLive=false; try{ cloudStopLive(); }catch(e){} if(curScreen==='dirette')renderDirette(); toast('Diretta terminata'); } }
 function joinAppt(i){ const a=S.appointments[i]; if(!a)return; openVideoCall(videoRoom(a),S.user.name); }
+
+/* ============ DIRETTE LIVE (solo professionisti trasmettono) ============ */
+let CLOUD_LIVES=[], _livesLoaded=false;
+async function cloudLoadLives(){ if(!cloudOn()){CLOUD_LIVES=[];return [];}
+  try{ const {data,error}=await SB.from('lives').select('*').eq('active',true).order('created_at',{ascending:false}); if(error)throw error; CLOUD_LIVES=data||[]; return CLOUD_LIVES; }catch(e){ return CLOUD_LIVES; } }
+async function cloudStartLive(title){ const room='live-'+cloudUser.id.slice(0,8)+'-'+Date.now().toString(36);
+  const row={pro_id:cloudUser.id,pro_name:(S.pro&&S.pro.name)||S.user.name||'Professionista',title:title||'Diretta',room,active:true};
+  const {data,error}=await SB.from('lives').insert(row).select().single();
+  if(error){ if(/relation|does not exist|schema cache|could not find the table/i.test(error.message||'')) throw new Error('Manca la tabella "lives": esegui lo script SQL delle dirette.'); throw error; }
+  return data; }
+async function cloudStopLive(){ if(!cloudOn()||!cloudUser)return; try{ await SB.from('lives').update({active:false}).eq('pro_id',cloudUser.id).eq('active',true); }catch(e){} }
+function diretteHTML(){
+  const pro=isProMode();
+  return `<button class="back" onclick="go('home')">← Home</button>
+  <div class="topbar" style="padding-top:0"><div class="hello"><div class="k">${pro?'Trasmetti in diretta':'Segui i professionisti live'}</div><div class="n">${ic('video',22)} Dirette</div></div></div>
+  <div class="banner gg"><span class="b-ic" style="opacity:.18">${ic('video',78)}</span><h4>Dirette live</h4><p>${pro?'Avvia una diretta video: i tuoi follower e gli utenti potranno seguirti in tempo reale.':'Guarda in tempo reale le dirette dei professionisti: lezioni, allenamenti e consigli.'}</p></div>
+  ${pro?`<button class="btn" onclick="startDiretta()">🔴 Avvia una diretta</button><div class="tiny" style="margin-top:8px">Mentre sei in diretta, gli utenti ti vedono nella pagina Dirette. Chiudendo la finestra la diretta termina.</div>`:''}
+  <div class="section-title">Dirette in corso</div>
+  <div id="dirette-list"><div class="card"><div class="sub">Caricamento…</div></div></div>`;
+}
+function renderDirette(){ const c=document.getElementById('dirette-list'); if(!c)return;
+  if(!cloudOn()){ c.innerHTML='<div class="card" style="text-align:center"><div class="sub">Attiva la modalità reale per vedere le dirette.</div></div>'; return; }
+  cloudLoadLives().then(lives=>{
+    c.innerHTML=lives.length?lives.map(l=>`<div class="card"><div class="row"><div class="ri" style="background:var(--coral-s);color:var(--coral)">🔴</div><div class="rt" style="flex:1"><b>${(l.title||'Diretta').replace(/</g,'&lt;')}</b><small>${l.pro_name||'Professionista'} · in diretta ora</small></div></div><button class="btn sm" style="margin-top:8px" onclick="watchLive('${l.room}')">▶ Guarda la diretta</button></div>`).join(''):'<div class="card" style="text-align:center"><div style="font-size:40px">📡</div><div class="sub">Nessuna diretta in corso in questo momento. Torna più tardi!</div></div>';
+  });
+}
+function renderHomeLive(){ const c=document.getElementById('home-live'); if(!c)return; c.innerHTML='';
+  if(!cloudOn())return;
+  cloudLoadLives().then(lives=>{ if(!lives.length||!document.getElementById('home-live'))return;
+    const l=lives[0];
+    document.getElementById('home-live').innerHTML=`<div class="section-title" style="margin-top:16px">🔴 In diretta ora</div><div class="card" onclick="watchLive('${l.room}')" style="cursor:pointer"><div class="row"><div class="ri" style="background:var(--coral-s);color:var(--coral)">🔴</div><div class="rt" style="flex:1"><b>${(l.title||'Diretta').replace(/</g,'&lt;')}</b><small>${l.pro_name||'Professionista'}${lives.length>1?' · e altre '+(lives.length-1):''}</small></div><div class="rv">▶</div></div></div>`;
+  });
+}
+function watchLive(room){ if(!(cloudOn()&&loggedIn())){ toast('Accedi per guardare la diretta'); go('cloud'); return; } openVideoCall(room, S.user.name||'Spettatore'); }
+function startDiretta(){ if(!isProMode()){toast('Solo i professionisti possono trasmettere');return;} if(!(cloudOn()&&loggedIn())){toast('Accedi per trasmettere');go('cloud');return;}
+  openForm({title:'Avvia una diretta',subtitle:'Dai un titolo alla tua diretta',fields:[{id:'t',label:'Titolo',ph:'es. Allenamento full body'}],submit:'🔴 Vai in diretta',
+    onSubmit:async(v)=>{ const t=(v.t||'').trim()||'Diretta'; try{ const live=await cloudStartLive(t); window._hostingLive=true; openVideoCall(live.room,(S.pro&&S.pro.name)||S.user.name); toast('Sei in diretta! 🔴'); }catch(e){ toast('Errore: '+(e.message||e)); return false; } }
+  });
+}
 let CLOUD_APPTS=[];
 async function cloudAddAppointment(o){ const row={user_id:cloudUser.id,user_name:S.user.name||'Utente',pro_id:o.proId||null,pro_name:o.name,spec:o.spec,date:o.date,time:o.time,mode:o.mode,room:o.room,status:'confermato'};
   const {data,error}=await SB.from('appointments').insert(row).select().single();
@@ -2578,8 +2545,7 @@ function openRecipe(id){ const r=findRecipe(id); if(!r)return;
     ${(r.ing&&r.ing.length)?`<div class="section-title" style="margin-top:0">Ingredienti</div><ul style="margin:0 0 14px;padding-left:18px;font-size:13px;line-height:1.7;color:var(--ink)">${r.ing.map(i=>`<li>${i}</li>`).join('')}</ul>`:''}
     ${r.steps?`<div class="section-title">Preparazione</div><div class="sub" style="margin-bottom:14px;line-height:1.6">${r.steps}</div>`:''}
     <div class="tiny" style="margin-bottom:12px">Ricetta di <b>${r.by||'Auréa'}</b></div>
-    <button class="btn" onclick="addRecipeToDiary('${r.id}')">${ic('plus',16)} Aggiungi al diario (${r.k} kcal)</button>
-    <button class="btn sec sm" style="margin-top:8px" onclick="shareRecipe('${r.id}')">Condividi in Community</button>
+    <button class="btn" onclick="shareRecipe('${r.id}')">Condividi in Community</button>
     ${canDel?`<button class="btn sec sm" style="margin-top:8px;color:var(--coral)" onclick="delRecipe('${r.id}')">Elimina ricetta</button>`:''}
     <button class="btn sec sm" style="margin-top:8px" onclick="this.closest('.app-modal').remove()">Chiudi</button>`);
 }
@@ -3601,16 +3567,16 @@ function runSearch(){
 }
 function communityHTML(){
   return `
-  <div class="topbar"><div class="hello"><div class="k">2.4k creator · ${(S.following||[]).length} seguiti</div><div class="n">👥 Community</div></div>
-    <button class="compose-btn" style="position:static" onclick="composeVideo()">🎬 Crea</button></div>
+  <div class="topbar"><div class="hello"><div class="k">${(S.following||[]).length} seguiti</div><div class="n">👥 Community</div></div>
+    <button class="compose-btn" style="position:static" onclick="go('dirette')">🔴 Dirette</button></div>
   <button class="btn sec sm" style="margin-bottom:12px" onclick="go('ricerca')">🔍 Cerca utenti, professionisti, ricette, hashtag…</button>
   <div class="seg" id="com-tab" style="margin-bottom:14px;overflow-x:auto;flex-wrap:nowrap">
     <button class="on" onclick="comTab('perte',this)">Per te</button>
     <button onclick="comTab('seguiti',this)">Seguiti</button>
     <button onclick="comTab('salvati',this)">Salvati</button>
-    <button onclick="comTab('bozze',this)">Bozze</button>
     <button onclick="comTab('chat',this)">Chat</button>
   </div>
+  <div class="tiny" style="margin-bottom:10px">Qui guardi i contenuti dei professionisti e delle persone che segui. Le dirette live sono nella pagina <b>Dirette</b>.</div>
   <div id="com-body"></div>`;
 }
 function comTab(t,btn){document.querySelectorAll('#com-tab button').forEach(b=>b.classList.remove('on'));if(btn)btn.classList.add('on');renderComBody(t);}
@@ -4899,12 +4865,13 @@ const BUILDERS={
   allenamento:allenamentoHTML, promemoria:promemoriaHTML, profilo:profiloHTML,
   planning:planningHTML, benessere:benessereHTML,
   community:communityHTML, frigo:frigoHTML, recupero:recuperoHTML,
-  detox:detoxHTML, digiuno:digiunoHTML, storia:storiaHTML, pro:proHTML, cloud:cloudHTML, admin:adminHTML, termini:terminiHTML, privacy:privacyHTML, ordini:ordiniHTML, clientchat:clientchatHTML, clientplans:clientplansHTML, score:scoreHTML, percorso:percorsoHTML, ricerca:ricercaHTML, sfide:sfideHTML, badge:badgeHTML, ricette:ricetteHTML, salute:saluteHTML,
+  detox:detoxHTML, digiuno:digiunoHTML, storia:storiaHTML, pro:proHTML, cloud:cloudHTML, admin:adminHTML, termini:terminiHTML, privacy:privacyHTML, ordini:ordiniHTML, clientchat:clientchatHTML, clientplans:clientplansHTML, score:scoreHTML, percorso:percorsoHTML, ricerca:ricercaHTML, sfide:sfideHTML, badge:badgeHTML, ricette:ricetteHTML, salute:saluteHTML, dirette:diretteHTML,
   carrello:()=>''
 };
 function rebuild(id){const el=document.getElementById('sc-'+id);if(el&&BUILDERS[id])el.innerHTML=BUILDERS[id]();afterRender(id);}
 function afterRender(id){
-  if(id==='home'){renderHomeAppts(); try{ if(healthBridge()&&S.healthConnected)syncHealth(true); }catch(e){}}
+  if(id==='home'){renderHomeAppts(); renderHomeLive();}
+  if(id==='dirette'){renderDirette();}
   if(id==='piano'){renderDislike();}
   if(id==='prenota'){
     if(isProMode()){ renderProAgenda(); }
@@ -4928,7 +4895,6 @@ function afterRender(id){
   if(id==='clientplans'){renderPlans();}
   if(id==='ricerca'){loadSearchData();}
   if(id==='ricette'){ renderRecipes(); if(cloudOn()&&!_recLoaded&&!_recFetching){ _recFetching=true; cloudLoadRecipes().then(()=>{ _recLoaded=true; _recFetching=false; if(curScreen==='ricette')renderRecipes(); }); } }
-  if(id==='home'||id==='score'){ try{ if(!isProMode()){ saveScoreToday(); checkMilestones(false); checkChallenges(); checkBadges(true); save(); } }catch(e){} }
 }
 function boot(){
   restore();
