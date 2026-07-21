@@ -769,7 +769,7 @@ async function cloudLoadFollowing(){ if(!cloudOn()||!cloudUser)return; try{ cons
 function isFollowingId(uid){ return FOLLOWING.has(uid); }
 async function cloudToggleFollow(uid){ if(!(cloudOn()&&loggedIn())){toast('Accedi per seguire');return false;} if(!uid||uid===cloudUser.id){return false;}
   try{ if(FOLLOWING.has(uid)){ await SB.from('follows').delete().eq('follower_id',cloudUser.id).eq('following_id',uid); FOLLOWING.delete(uid); return false; }
-    else { await SB.from('follows').insert({follower_id:cloudUser.id,following_id:uid}); FOLLOWING.add(uid); try{cloudNotify(uid,'follow',{});}catch(e){} return true; } }catch(e){ toast('Errore: '+(e.message||e)); return FOLLOWING.has(uid); } }
+    else { await SB.from('follows').insert({follower_id:cloudUser.id,following_id:uid}); FOLLOWING.add(uid); try{cloudNotify(uid,'follow',{});}catch(e){} try{bumpActivity(1);}catch(e){} return true; } }catch(e){ toast('Errore: '+(e.message||e)); return FOLLOWING.has(uid); } }
 async function cloudLoadSaves(){ if(!cloudOn()||!cloudUser)return; try{ const {data}=await SB.from('saves').select('post_id').eq('user_id',cloudUser.id); SAVED=new Set((data||[]).map(r=>String(r.post_id))); }catch(e){} }
 function isSaved(pid){ return SAVED.has(String(pid)); }
 async function cloudToggleSave(pid){ if(!(cloudOn()&&loggedIn())){toast('Accedi per salvare');return false;}
@@ -1423,8 +1423,12 @@ function checkBadges(celebrate){ S.badges=S.badges||[]; const have=new Set(S.bad
   BADGES.forEach(def=>{ if(!have.has(def.key)){ let ok=false; try{ok=def.cond();}catch(e){} if(ok){ S.badges.push({key:def.key,title:def.t,icn:def.icn,date:todayKey()}); added=def; } } });
   if(added){ try{save();}catch(e){} if(celebrate)toast('🏅 Nuovo badge sbloccato: '+added.t); }
 }
-function xpTotal(){ return (S.badges||[]).length*50 + (S.milestones||[]).length*30 + Object.values(S.challenges||{}).filter(c=>c.done).length*100; }
-function levelInfo(){ const xp=xpTotal(); return {xp,lvl:Math.floor(xp/200)+1,inLvl:xp%200,nextNeed:200}; }
+// Il livello cresce con l'ATTIVITÀ nell'app: giorni di utilizzo + azioni (post, follow, commenti, messaggi, dirette) + badge
+function markActiveToday(){ S.activity=S.activity||{days:[],actions:0}; const d=(typeof todayKey==='function')?todayKey():new Date().toISOString().slice(0,10); if(!S.activity.days.includes(d)){ S.activity.days.push(d); if(S.activity.days.length>400)S.activity.days=S.activity.days.slice(-400); try{save();}catch(e){} } }
+function bumpActivity(n){ S.activity=S.activity||{days:[],actions:0}; S.activity.actions=(S.activity.actions||0)+(n||1); try{save();}catch(e){} const el=document.getElementById('sc-profilo'); }
+function activityXP(){ const a=S.activity||{days:[],actions:0}; return (a.days?a.days.length:0)*15 + (a.actions||0)*4 + (S.badges||[]).length*30; }
+function xpTotal(){ return activityXP(); }
+function levelInfo(){ const xp=xpTotal(); return {xp,lvl:Math.floor(xp/150)+1,inLvl:xp%150,nextNeed:150}; }
 function sfideHTML(){
   checkChallenges();
   const st=S.challenges||{};
@@ -2543,7 +2547,7 @@ function renderHomeLive(){ const c=document.getElementById('home-live'); if(!c)r
     document.getElementById('home-live').innerHTML=`<div class="section-title" style="margin-top:16px">🔴 In diretta ora</div><div class="card" onclick="watchLive('${l.room}','${l.pro_id||''}','${(l.pro_name||'').replace(/'/g,'')}')" style="cursor:pointer"><div class="row"><div class="ri" style="background:var(--coral-s);color:var(--coral)">🔴</div><div class="rt" style="flex:1"><b>${(l.title||'Diretta').replace(/</g,'&lt;')}</b><small>${l.pro_name||'Professionista'}${lives.length>1?' · e altre '+(lives.length-1):''}</small></div><div class="rv">▶</div></div></div>`;
   });
 }
-function watchLive(room,hostId,hostName){ if(!(cloudOn()&&loggedIn())){ toast('Accedi per guardare la diretta'); go('cloud'); return; } openLive(room,{host:false,hostId:hostId||'',title:hostName?('Diretta di '+hostName):'🔴 Diretta live'}); }
+function watchLive(room,hostId,hostName){ if(!(cloudOn()&&loggedIn())){ toast('Accedi per guardare la diretta'); go('cloud'); return; } try{bumpActivity(1);}catch(e){} openLive(room,{host:false,hostId:hostId||'',title:hostName?('Diretta di '+hostName):'🔴 Diretta live'}); }
 function startDiretta(){ if(!isProMode()&&!isAdmin()){toast('Solo i professionisti possono trasmettere');return;} if(!(cloudOn()&&loggedIn())){toast('Accedi per trasmettere');go('cloud');return;}
   openForm({title:'Avvia una diretta',subtitle:'Dai un titolo alla tua diretta',fields:[{id:'t',label:'Titolo',ph:'es. Allenamento full body'}],submit:'🔴 Vai in diretta',
     onSubmit:async(v)=>{ const t=(v.t||'').trim()||'Diretta'; try{ await cloudStopLive(); const live=await cloudStartLive(t); openLive(live.room,{host:true,hostId:cloudUser.id,title:'🔴 '+t}); toast('Sei in diretta! 🔴'); }catch(e){ toast('Errore: '+(e.message||e)); return false; } }
@@ -2929,7 +2933,7 @@ function renderChat(){
   });
 }
 async function sendClientMsg(){ const el=document.getElementById('chat-msg'); const t=(el&&el.value||'').trim(); if(!t||!S._chatWith)return; el.value=''; hideTyping();
-  try{ await cloudSendMessage(chatSendPayload({text:t})); renderChat(); }catch(e){ toast('Invio non riuscito: '+(e.message||e)); } }
+  try{ await cloudSendMessage(chatSendPayload({text:t})); try{bumpActivity(1);}catch(e){} renderChat(); }catch(e){ toast('Invio non riuscito: '+(e.message||e)); } }
 /* ===== Messaggi non letti (pallino) + visualizzato (spunta) ===== */
 let MSG_UNREAD=0, _chatPoll=null;
 async function cloudLoadMsgUnread(){ if(!cloudOn()||!cloudUser){MSG_UNREAD=0;return 0;} try{ const {count,error}=await SB.from('messages').select('id',{count:'exact',head:true}).eq('to_id',cloudUser.id).eq('read',false).is('group_id',null); if(error)throw error; MSG_UNREAD=count||0; }catch(e){} return MSG_UNREAD; }
@@ -3503,12 +3507,6 @@ function profiloHTML(){
   <div class="card" style="text-align:center">
     <div class="avatar" style="width:80px;height:80px;border-radius:26px;font-size:32px;margin:0 auto 12px">${S.user.initials}</div>
     <div style="font-size:20px;font-weight:800">${S.user.name}</div>
-    <div class="sub">Obiettivo: ${S.user.goal} · ${S.wNow} kg</div>
-    <div class="grid3" style="margin-top:16px">
-      <div><div style="font-size:20px;font-weight:800">28</div><div class="l" style="font-size:11px;color:var(--muted)">Giorni attiva</div></div>
-      <div><div style="font-size:20px;font-weight:800">-2.1</div><div class="l" style="font-size:11px;color:var(--muted)">kg mese</div></div>
-      <div><div style="font-size:20px;font-weight:800">86%</div><div class="l" style="font-size:11px;color:var(--muted)">Aderenza</div></div>
-    </div>
   </div>
 
   <div class="card">
@@ -3523,28 +3521,15 @@ function profiloHTML(){
   </div>
 
   <div class="card tight">
-    <div class="row" onclick="go('percorso')" style="cursor:pointer"><div class="ri" style="background:var(--mint);color:var(--green-d)">${ic('sparkle',22)}</div><div class="rt"><b>Percorso Benessere</b><small>i tuoi traguardi, in una timeline</small></div><div class="rv">›</div></div>
-    <div class="row" onclick="go('salute')" style="cursor:pointer"><div class="ri" style="background:var(--coral-s);color:var(--coral)">${ic('heart',22)}</div><div class="rt"><b>Salute e dispositivi</b><small>passi e sonno da Apple Salute / Google Fit</small></div><div class="rv">›</div></div>
-    <div class="row" onclick="go('badge')" style="cursor:pointer"><div class="ri" style="background:#fff0e0;color:#c8781f">${ic('shield',22)}</div><div class="rt"><b>Badge & Livello</b><small>livello ${levelInfo().lvl} · ${(S.badges||[]).length} badge · ${xpTotal()} XP</small></div><div class="rv">›</div></div>
+    <div class="row" onclick="go('badge')" style="cursor:pointer"><div class="ri" style="background:#fff0e0;color:#c8781f">${ic('shield',22)}</div><div class="rt"><b>Livello & Badge</b><small>livello ${levelInfo().lvl} · più usi Auréa, più sali · ${(S.badges||[]).length} badge</small></div><div class="rv">›</div></div>
     <div class="row" onclick="go('sfide')" style="cursor:pointer"><div class="ri" style="background:var(--coral-s);color:var(--coral)">${ic('flame',22)}</div><div class="rt"><b>Sfide</b><small>partecipa e sblocca traguardi</small></div><div class="rv">›</div></div>
-    <div class="row" onclick="go('storia')" style="cursor:pointer"><div class="ri" style="background:var(--mint)">📋</div><div class="rt"><b>Storia clinica</b><small>personalizza il piano</small></div><div class="rv">›</div></div>
     <div class="row" onclick="go('pro')" style="cursor:pointer"><div class="ri" style="background:var(--violet-s)">🎓</div><div class="rt"><b>${S.pro?'Il mio profilo professionista':'Diventa professionista'}</b><small>${S.pro?(S.pro.status==='verificato'?'verificato ✔️':'in verifica ⏳'):'nutrizionista, medico, PT…'}</small></div><div class="rv">›</div></div>
     <div class="row" onclick="go('cloud')" style="cursor:pointer"><div class="ri" style="background:#e8f1ff">☁️</div><div class="rt"><b>${loggedIn()?'Account cloud':'Attiva modalità reale'}</b><small>${loggedIn()?(cloudUser.email):'account veri + video reali'}</small></div><div class="rv">›</div></div>
     <div class="row" onclick="go('prenota')" style="cursor:pointer"><div class="ri" style="background:var(--mint)">🩺</div><div class="rt"><b>Le mie visite</b></div><div class="rv">›</div></div>
     <div class="row" onclick="go('ordini')" style="cursor:pointer"><div class="ri" style="background:var(--mint)">📦</div><div class="rt"><b>I miei ordini</b></div><div class="rv">›</div></div>
-    <div class="row" onclick="go('promemoria')" style="cursor:pointer"><div class="ri" style="background:var(--mint)">⏰</div><div class="rt"><b>Promemoria</b></div><div class="rv">›</div></div>
     <div class="row" onclick="go('termini')" style="cursor:pointer"><div class="ri" style="background:var(--coral-s)">⚖️</div><div class="rt"><b>Termini e responsabilità</b><small>ruolo di Auréa e responsabilità</small></div><div class="rv">›</div></div>
     <div class="row" onclick="go('privacy')" style="cursor:pointer"><div class="ri" style="background:#e8f1ff">🔒</div><div class="rt"><b>Privacy</b><small>come trattiamo i tuoi dati</small></div><div class="rv">›</div></div>
     ${isAdmin()?`<div class="row" onclick="go('admin')" style="cursor:pointer"><div class="ri" style="background:#fff0e0">🛠️</div><div class="rt"><b>Pannello admin</b><small>gestisci professionisti e prodotti</small></div><div class="rv">›</div></div>`:''}
-  </div>
-
-  <div class="card">
-    <div class="h">🤖 Riconoscimento AI dei cibi ${S.aiKey?'<span class="pill">Attivo</span>':'<span class="pill" style="background:var(--line);color:var(--muted)">Demo</span>'}</div>
-    <div class="sub" style="margin-bottom:12px">Con una chiave API Claude, lo scanner pasti e il frigo riconoscono i cibi reali dalle tue foto. Senza chiave restano in modalità demo.</div>
-    <div class="field"><label>Chiave API (Anthropic)</label><input id="ai-key" type="password" placeholder="sk-ant-..." value="${S.aiKey||''}"></div>
-    <div class="field"><label>Modello (opzionale)</label><input id="ai-model" placeholder="claude-3-5-sonnet-latest" value="${S.aiModel||''}"></div>
-    <button class="btn sm" onclick="saveAiKey()">${S.aiKey?'Aggiorna':'Attiva riconoscimento AI'}</button>
-    <div class="tiny" style="text-align:left;margin-top:10px">🔒 La chiave resta solo su questo dispositivo. La ottieni su console.anthropic.com. Nota: l'uso dell'API ha un costo a consumo sul tuo account.</div>
   </div>
 
   <div class="card tight">
@@ -4047,7 +4032,7 @@ function composeUserPost(){ if(!(cloudOn()&&loggedIn())){toast('Accedi per pubbl
         let {error}=await SB.from('posts').insert(row);
         if(error&&/column/.test(error.message||'')){ delete row.is_image; const r2=await SB.from('posts').insert(row); error=r2.error; }
         if(error)throw error;
-        toast('Post pubblicato ✓'); if(curScreen==='community'){ const t=(document.getElementById('com-body')||{}).dataset; renderComBody((t&&t.t)||'perte'); }
+        try{bumpActivity(3);}catch(e){} toast('Post pubblicato ✓'); if(curScreen==='community'){ const t=(document.getElementById('com-body')||{}).dataset; renderComBody((t&&t.t)||'perte'); }
       }catch(e){ toast('Errore: '+(e.message||e)); } } });
 }
 function communityHTML(){
@@ -4175,7 +4160,7 @@ function renderComments(pid){ const el=document.getElementById('cmt-list'); if(!
   cloudLoadComments(pid).then(list=>{ el.innerHTML=list.length?list.map(c=>`<div class="row" style="padding:8px 0"><div class="rt"><b style="color:var(--green-d);font-size:12px">@${(c.author||'utente')}</b><small style="white-space:normal">${(c.text||'').replace(/</g,'&lt;')}</small></div></div>`).join(''):'<div class="sub" style="text-align:center;padding:16px">Nessun commento. Scrivi il primo!</div>'; });
 }
 async function sendComment(pid){ const el=document.getElementById('cmt-in'); const t=(el&&el.value||'').trim(); if(!t)return; if(!(cloudOn()&&loggedIn())){toast('Accedi per commentare');return;} el.value='';
-  try{ await cloudAddComment(pid,t); COMMENT_COUNTS[pid]=(COMMENT_COUNTS[pid]||0)+1; if(_cmtOwner)cloudNotify(_cmtOwner,'comment',{post_id:pid,text:t}); renderComments(pid); }catch(e){ toast('Errore: '+(e.message||e)); } }
+  try{ await cloudAddComment(pid,t); COMMENT_COUNTS[pid]=(COMMENT_COUNTS[pid]||0)+1; if(_cmtOwner)cloudNotify(_cmtOwner,'comment',{post_id:pid,text:t}); try{bumpActivity(1);}catch(e){} renderComments(pid); }catch(e){ toast('Errore: '+(e.message||e)); } }
 function likeRealPost(id,cur,btn){ cloudLikePost(id,cur); btn.innerHTML='<span>❤️</span><span class="cnt">'+fmt((cur||0)+1)+'</span>'; }
 /* ===== EDITOR VIDEO + BOZZE ===== */
 let DRAFTS=[], MYSHORTS=[];
@@ -5389,6 +5374,7 @@ function afterRender(id){
 }
 function boot(){
   restore();
+  try{ markActiveToday(); }catch(e){}
   try{ const af=localStorage.getItem('aurea_autosave'); if(af!=null) S.autoSave=(af!=='0'); }catch(e){}
   cloudInit();
   Object.keys(BUILDERS).forEach(id=>screen(id, BUILDERS[id]()));
