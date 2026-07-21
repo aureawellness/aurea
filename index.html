@@ -4,9 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google-site-verification" content="awEdacvnryrptEHDM3MP8F-dRQmYcZvKpcKkp2FmHCE" />
-<title>Auréa Wellness · Nutrizione, benessere ed estetica in un'unica app</title>
-<meta name="description" content="Auréa Wellness unisce piano nutrizionale intelligente, allenamento, sonno, ricette, community e professionisti verificati in un unico ecosistema del benessere. Scopri il tuo Aurea Score e prenditi cura di te.">
-<meta name="keywords" content="Aurea, Aurea Wellness, benessere, nutrizione, dieta, allenamento, salute, estetica, app benessere, aurea score, ricette, professionisti">
+<script>/* la landing si apre solo la PRIMA volta: dopo si va dritti all'app */
+try{ if(localStorage.getItem('aurea_seen')){ location.replace('app.html'); } else { localStorage.setItem('aurea_seen','1'); } }catch(e){}</script>
+<title>Auréa Wellness · Professionisti del benessere, ricette, dirette e integratori</title>
+<meta name="description" content="Auréa Wellness ti mette in contatto con professionisti del benessere verificati: prenoti, fai videoconsulti e chatti. In più: ricette, video allenamenti, dirette live dei professionisti e integratori selezionati.">
+<meta name="keywords" content="Aurea, Aurea Wellness, benessere, professionisti, nutrizionista, personal trainer, medico, videoconsulto, ricette, allenamenti, dirette, integratori">
 <meta name="author" content="Auréa Wellness">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://aureawellness.github.io/aurea/">
@@ -14,18 +16,18 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Auréa Wellness">
-<meta property="og:title" content="Auréa Wellness · Il tuo benessere, tutto in uno">
-<meta property="og:description" content="Nutrizione, corpo e mente in un unico posto. Piano su misura, ricette, community e professionisti verificati.">
+<meta property="og:title" content="Auréa Wellness · I professionisti del benessere, a portata di app">
+<meta property="og:description" content="Prenoti professionisti verificati, fai videoconsulti, segui dirette e video allenamenti, scopri ricette e integratori.">
 <meta property="og:url" content="https://aureawellness.github.io/aurea/">
 <meta property="og:image" content="https://aureawellness.github.io/aurea/icon-512.png">
 <meta property="og:locale" content="it_IT">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Auréa Wellness · Il tuo benessere, tutto in uno">
-<meta name="twitter:description" content="Nutrizione, corpo e mente in un unico posto. Scopri il tuo Aurea Score.">
+<meta name="twitter:title" content="Auréa Wellness · I professionisti del benessere, a portata di app">
+<meta name="twitter:description" content="Prenoti professionisti verificati, videoconsulti, dirette, allenamenti, ricette e integratori.">
 <meta name="twitter:image" content="https://aureawellness.github.io/aurea/icon-512.png">
 <meta name="theme-color" content="#128a63">
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebApplication","name":"Auréa Wellness","alternateName":"Aurea","url":"https://aureawellness.github.io/aurea/","description":"App di benessere che unisce nutrizione, allenamento, sonno, ricette, community e professionisti verificati.","applicationCategory":"HealthApplication","operatingSystem":"Web, iOS, Android","inLanguage":"it","offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"}}
+{"@context":"https://schema.org","@type":"WebApplication","name":"Auréa Wellness","alternateName":"Aurea","url":"https://aureawellness.github.io/aurea/","description":"Piattaforma che connette le persone con professionisti del benessere verificati: prenotazioni, videoconsulti, chat, ricette, video allenamenti, dirette e integratori.","applicationCategory":"HealthApplication","operatingSystem":"Web, iOS, Android","inLanguage":"it","offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"}}
 </script>
 <style>
   :root{
@@ -140,7 +142,7 @@
     <div class="logo"><span class="mark">A</span> Auréa</div>
     <div class="navlinks">
       <a href="#funzioni">Funzioni</a>
-      <a href="#score">Aurea Score</a>
+      <a href="#dirette">Dirette</a>
       <a href="#come">Come funziona</a>
       <a href="#chi">Per chi</a>
       <a class="btn" href="app.html" id="cta-nav">Apri l'app</a>
@@ -151,61 +153,59 @@
 <!-- HERO -->
 <div class="hero"><div class="wrap"><div class="hero-grid">
   <div>
-    <span class="badge">✨ Il tuo ecosistema del benessere</span>
-    <h1>Nutrizione, corpo e mente.<br><span class="hl">In un unico posto.</span></h1>
-    <p class="lead">Auréa unisce piano alimentare intelligente, allenamento, sonno, ricette, community e professionisti verificati. Un solo numero riassume come stai davvero: il tuo <b>Aurea Score</b>.</p>
+    <span class="badge">✨ Benessere & professionisti verificati</span>
+    <h1>I professionisti del benessere.<br><span class="hl">A portata di app.</span></h1>
+    <p class="lead">Auréa ti mette in contatto con nutrizionisti, medici e personal trainer verificati: prenoti, fai videoconsulti e chatti con loro. E ogni giorno trovi ricette, video allenamenti, dirette e integratori selezionati.</p>
     <div class="cta-row">
-      <a class="btn" href="app.html" id="cta-hero">Inizia gratis</a>
+      <a class="btn" href="app.html" id="cta-hero">Inizia</a>
       <a class="btn ghost" href="#funzioni">Scopri di più</a>
     </div>
     <div class="trust">
-      <span><b>100%</b> gratuito per iniziare</span>
-      <span><b>GDPR</b> · dati protetti in UE</span>
       <span><b>Professionisti</b> verificati</span>
+      <span><b>GDPR</b> · dati protetti in UE</span>
+      <span><b>Pagamenti</b> sicuri</span>
     </div>
   </div>
   <div class="phone-mock"><div class="phone-screen">
     <div class="ps-top">
-      <div class="k">BUONGIORNO</div>
-      <div class="n">Il tuo Aurea Score</div>
-      <div class="ring"><div class="val"><b>82</b><small>ottimo</small></div></div>
+      <div class="k">CIAO 👋</div>
+      <div class="n">Il tuo benessere, oggi</div>
+      <div class="ring"><div class="val"><b>A</b><small>Auréa</small></div></div>
     </div>
     <div class="ps-body">
-      <div class="ps-card"><div class="ps-ic">🥗</div><div class="t"><b>Piano di oggi</b><small>1.850 kcal · 4 pasti</small></div></div>
-      <div class="ps-card"><div class="ps-ic">👟</div><div class="t"><b>8.240 passi</b><small>82% dell'obiettivo</small></div></div>
-      <div class="ps-card"><div class="ps-ic">😴</div><div class="t"><b>7h 20m di sonno</b><small>Recupero ottimo</small></div></div>
-      <div class="ps-card"><div class="ps-ic">🌱</div><div class="t"><b>Nuovo traguardo</b><small>7 giorni di costanza</small></div></div>
+      <div class="ps-card"><div class="ps-ic">🩺</div><div class="t"><b>Dott.ssa Bianchi</b><small>Nutrizionista · prenota ora</small></div></div>
+      <div class="ps-card"><div class="ps-ic">🔴</div><div class="t"><b>Diretta in corso</b><small>Personal trainer · full body</small></div></div>
+      <div class="ps-card"><div class="ps-ic">🍽️</div><div class="t"><b>Bowl proteica</b><small>Ricetta · 420 kcal</small></div></div>
+      <div class="ps-card"><div class="ps-ic">💊</div><div class="t"><b>Integratori</b><small>Schede reali · consigliati</small></div></div>
     </div>
   </div></div>
 </div></div></div>
 
 <!-- FEATURES -->
 <section id="funzioni"><div class="wrap">
-  <div class="eyebrow">Tutto integrato</div>
-  <h2 class="h2">Un'app sola al posto di dieci</h2>
-  <p class="sub">Smetti di saltare tra contapassi, diario alimentare, note del sonno e chat. Auréa fa parlare tutto insieme.</p>
+  <div class="eyebrow">Tutto in un posto</div>
+  <h2 class="h2">Il benessere, con le persone giuste</h2>
+  <p class="sub">Professionisti verificati, contenuti utili e prodotti selezionati: Auréa mette insieme tutto ciò che ti serve per stare bene.</p>
   <div class="features">
-    <div class="feat"><div class="fic" style="background:var(--green)">🥗</div><h3>Piano nutrizionale intelligente</h3><p>Calorie e pasti calcolati sul tuo peso obiettivo, adattati a gusti, intolleranze e storia clinica. Scanner dei pasti e inserimento manuale con macro.</p></div>
-    <div class="feat"><div class="fic" style="background:var(--amber)">🍽️</div><h3>Ricettario</h3><p>Ricette di Auréa, professionisti e community. Filtra per dieta (vegano, cheto, mediterranea…) e aggiungile al diario con un tocco.</p></div>
-    <div class="feat"><div class="fic" style="background:var(--blue)">🏋️</div><h3>Allenamento e sonno</h3><p>Video degli allenamenti dai personal trainer, contapassi reale, monitoraggio del sonno e del recupero.</p></div>
-    <div class="feat"><div class="fic" style="background:var(--violet)">👥</div><h3>Community e sfide</h3><p>Segui, salva, commenta. Feed che premia qualità e costanza, non solo i like. Sfide, badge e livelli per restare motivato.</p></div>
-    <div class="feat"><div class="fic" style="background:var(--green-d)">🩺</div><h3>Professionisti verificati</h3><p>Prenota nutrizionisti, medici e trainer, online o in studio. Ricevi piani su misura e chatta direttamente con loro.</p></div>
+    <div class="feat"><div class="fic" style="background:var(--green-d)">🩺</div><h3>Professionisti verificati</h3><p>Prenota nutrizionisti, medici e trainer, online o in studio. Fai videoconsulti e chatta direttamente con loro.</p></div>
+    <div class="feat"><div class="fic" style="background:var(--coral)">🔴</div><h3>Dirette live</h3><p>I professionisti trasmettono lezioni e sessioni in diretta video. Tu le segui in tempo reale da una pagina dedicata.</p></div>
+    <div class="feat"><div class="fic" style="background:var(--blue)">🏋️</div><h3>Video allenamenti</h3><p>Allenamenti pubblicati dai personal trainer verificati, sempre disponibili quando vuoi, dove vuoi.</p></div>
+    <div class="feat"><div class="fic" style="background:var(--amber)">🍽️</div><h3>Ricette</h3><p>Ricette di Auréa, professionisti e community. Filtra per tipo (vegano, cheto, mediterranea…), salvale e condividile.</p></div>
     <div class="feat"><div class="fic" style="background:var(--coral)">💊</div><h3>Integratori con schede reali</h3><p>Ingredienti, benefici, studi e controindicazioni per ogni prodotto. Acquisto sicuro con pagamenti tracciati.</p></div>
+    <div class="feat"><div class="fic" style="background:var(--violet)">👥</div><h3>Community</h3><p>Segui i profili che ti piacciono, guarda i loro contenuti e resta ispirato ogni giorno.</p></div>
   </div>
 </div></section>
 
-<!-- SCORE BAND -->
-<section id="score"><div class="wrap"><div class="band">
-  <div class="eyebrow" style="color:rgba(255,255,255,.9)">Aurea Score</div>
-  <h2>Un solo numero, da 0 a 100</h2>
-  <p>Il tuo benessere non è solo la bilancia. L'Aurea Score fonde alimentazione, attività, sonno, idratazione, umore e costanza in un unico punteggio che cresce con le tue buone abitudini.</p>
+<!-- DIRETTE BAND -->
+<section id="dirette"><div class="wrap"><div class="band">
+  <div class="eyebrow" style="color:rgba(255,255,255,.9)">🔴 Dirette live</div>
+  <h2>I professionisti, in diretta con te</h2>
+  <p>Lezioni, allenamenti e sessioni trasmessi in diretta video dai professionisti di Auréa. Ti colleghi con un tocco e segui tutto in tempo reale, da una pagina dedicata.</p>
   <div class="pillars">
-    <div class="pillar"><b>Alimentazione</b><small>equilibrio dei pasti</small></div>
-    <div class="pillar"><b>Attività</b><small>passi e workout</small></div>
-    <div class="pillar"><b>Sonno</b><small>quantità e recupero</small></div>
-    <div class="pillar"><b>Idratazione</b><small>acqua giornaliera</small></div>
-    <div class="pillar"><b>Umore</b><small>come ti senti</small></div>
-    <div class="pillar"><b>Costanza</b><small>la tua serie</small></div>
+    <div class="pillar"><b>Allenamenti</b><small>live coi trainer</small></div>
+    <div class="pillar"><b>Q&A</b><small>domande in diretta</small></div>
+    <div class="pillar"><b>Consigli</b><small>dai professionisti</small></div>
+    <div class="pillar"><b>Sempre</b><small>dal tuo telefono</small></div>
   </div>
 </div></div></section>
 
@@ -213,11 +213,11 @@
 <section id="come"><div class="wrap">
   <div class="eyebrow">Semplice</div>
   <h2 class="h2">Inizi in tre passi</h2>
-  <p class="sub">Nessuna configurazione complicata: bastano pochi minuti per avere il tuo piano.</p>
+  <p class="sub">Nessuna configurazione complicata: bastano pochi minuti.</p>
   <div class="steps">
-    <div class="step"><div class="num">1</div><h4>Racconta i tuoi obiettivi</h4><p>Peso attuale e obiettivo, dieta, preferenze e stile di vita. Auréa costruisce il tuo piano personalizzato.</p></div>
-    <div class="step"><div class="num">2</div><h4>Vivi la tua giornata</h4><p>Registra pasti, passi, sonno e umore. Il tuo Aurea Score si aggiorna in tempo reale.</p></div>
-    <div class="step"><div class="num">3</div><h4>Migliora con la community</h4><p>Sblocca traguardi, partecipa alle sfide e affidati ai professionisti quando vuoi un supporto in più.</p></div>
+    <div class="step"><div class="num">1</div><h4>Crea il tuo account</h4><p>Ti registri in un attimo e sei subito dentro Auréa, senza costi per iniziare.</p></div>
+    <div class="step"><div class="num">2</div><h4>Trova ciò che ti serve</h4><p>Scegli il professionista giusto, guarda le dirette e i video allenamenti, scopri ricette e integratori.</p></div>
+    <div class="step"><div class="num">3</div><h4>Prenota e resta in contatto</h4><p>Prenoti visite online o in studio, fai videoconsulti e chatti direttamente con i professionisti.</p></div>
   </div>
 </div></section>
 
@@ -230,18 +230,18 @@
     <div class="audcard">
       <h3>🙋 Per te</h3>
       <ul>
-        <li>Piano alimentare che si adatta ai tuoi gusti</li>
-        <li>Un unico punteggio per capire come stai</li>
-        <li>Ricette, allenamenti e sfide per restare costante</li>
-        <li>Traguardi da condividere quando vuoi</li>
+        <li>Prenoti professionisti verificati, online o in studio</li>
+        <li>Segui le dirette e i video allenamenti dei trainer</li>
+        <li>Scopri ricette e integratori selezionati</li>
+        <li>Chatti direttamente con i professionisti</li>
       </ul>
     </div>
     <div class="audcard">
       <h3>🩺 Per i professionisti</h3>
       <ul>
         <li>Agenda appuntamenti online e in studio</li>
-        <li>Piani nutrizionali e chat con i clienti</li>
-        <li>Pubblica video, ricette e integratori</li>
+        <li>Videoconsulti, chat con i clienti e piani su misura</li>
+        <li>Fai dirette, pubblica video allenamenti e ricette</li>
         <li>Pagamenti sicuri e tracciati</li>
       </ul>
     </div>
@@ -250,8 +250,8 @@
 
 <!-- FINAL CTA -->
 <section><div class="wrap"><div class="final">
-  <h2>Il tuo benessere merita un posto solo.</h2>
-  <p>Inizia oggi con Auréa. Gratis, dal tuo telefono.</p>
+  <h2>Il benessere merita le persone giuste.</h2>
+  <p>Inizia oggi con Auréa, dal tuo telefono.</p>
   <a class="btn" href="app.html" id="cta-final" style="padding:17px 40px;font-size:17px">Apri Auréa</a>
 </div></div></section>
 
@@ -261,7 +261,7 @@
     <div class="logo"><span class="mark">A</span> Auréa</div>
     <div class="navlinks" style="gap:22px">
       <a href="#funzioni">Funzioni</a>
-      <a href="#score">Aurea Score</a>
+      <a href="#dirette">Dirette</a>
       <a href="app.html">Apri l'app</a>
     </div>
   </div>

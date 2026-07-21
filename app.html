@@ -649,19 +649,30 @@ function preloadCloud(){ renderNav(); if(S.pro && S.pro.status==='in_verifica'){
   cloudLoadProducts().then(()=>{ _prodLoaded=true; if(curScreen==='home')rebuild('home'); if(curScreen==='shop')rebuild('shop'); });
   cloudLoadDocs().then(()=>{ _docsLoaded=true; if(curScreen==='prenota')renderDocs('Tutti'); });
 }
-async function cloudCheckSession(){ if(!cloudOn())return null; try{ const {data}=await SB.auth.getSession(); cloudUser=data&&data.session?data.session.user:null; if(cloudUser){ const had=await cloudLoadProfile(); if(!had) resetLocalIdentity(); } }catch(e){} return cloudUser; }
+async function cloudCheckSession(){ if(!cloudOn())return null; try{ const {data}=await SB.auth.getSession(); cloudUser=data&&data.session?data.session.user:null; if(cloudUser){ const had=await cloudLoadProfile(); postAuth(had); } }catch(e){} return cloudUser; }
 async function cloudSignUp(email,pass){
   const {data,error}=await SB.auth.signUp({email,password:pass}); if(error) throw error;
   cloudUser=data.user; return data;
 }
 async function cloudSignIn(email,pass){
   const {data,error}=await SB.auth.signInWithPassword({email,password:pass}); if(error) throw error;
-  cloudUser=data.user; const had=await cloudLoadProfile(); if(!had){ resetLocalIdentity(); } return data;
+  cloudUser=data.user; const had=await cloudLoadProfile(); postAuth(had); return data;
+}
+// Decide cosa fare dei dati locali dopo l'accesso:
+// - se il cloud ha i dati dell'utente → li usiamo (il professionista resta professionista)
+// - se il cloud non ha dati MA quelli locali sono di QUESTO stesso utente → li teniamo e li ricarichiamo (così non si perde il profilo pro)
+// - se i dati locali sono di un altro utente → azzeriamo (niente "profilo altrui" appiccicato)
+function postAuth(had){
+  if(had){ S._ownerUid=cloudUser.id; return; }
+  if(S._ownerUid && S._ownerUid===cloudUser.id){ try{ cloudSaveProfile(); }catch(e){} }
+  else { resetLocalIdentity(); }
+  S._ownerUid=cloudUser.id;
 }
 async function cloudSignOut(){ try{ await SB.auth.signOut(); }catch(e){} cloudUser=null; }
 function minState(){ const {foodLog,...rest}=S; return rest; }
 async function cloudSaveProfile(){
   if(!cloudOn()||!cloudUser)return;
+  S._ownerUid=cloudUser.id;
   try{ await SB.from('profiles').upsert({
     id:cloudUser.id, email:cloudUser.email, name:S.user.name, sex:S.user.sex, age:S.user.age, height:S.user.height,
     wnow:S.wNow, wgoal:S.wGoal, goal:S.user.goal, diet:S.diet,
@@ -2223,7 +2234,7 @@ function docReviews(name){return (S.docReviews&&S.docReviews[name])||[];}
 function docRating(d){const ur=docReviews(d.n);const base=parseFloat(d.r)||5;if(!ur.length)return base.toFixed(1);const sum=base*d.nr+ur.reduce((a,b)=>a+b.stars,0);return (sum/(d.nr+ur.length)).toFixed(1);}
 function docReviewCount(d){return d.nr+docReviews(d.n).length;}
 function stars(n){n=Math.round(n);return '★★★★★'.slice(0,n)+'☆☆☆☆☆'.slice(0,5-n);}
-const SPECS=["Tutti","Nutrizionista","Estetico","Psicologa","Diabetologo","Dermatologo","Ginecologo","Endocrinologo","Trainer"];
+const SPECS=["Tutti","Nutrizionista","Psicologa","Diabetologo","Dermatologo","Ginecologo","Endocrinologo","Trainer"];
 function prenotaHTML(){
   if(isProMode()){
     return `
@@ -4388,7 +4399,6 @@ const PROFS=[
   {v:"Endocrinologo",ic:"⚕️",ente:"Ordine dei Medici (OMCeO / FNOMCeO)",albo:true},
   {v:"Psicologo",ic:"🧠",ente:"Ordine degli Psicologi (regionale)",albo:true},
   {v:"Personal Trainer",ic:"🏋️",ente:"Laurea Scienze Motorie / cert. CONI",albo:false},
-  {v:"Estetista",ic:"💆",ente:"Qualifica professionale regionale",albo:false},
   {v:"Fornitore autorizzato (vendita integratori)",ic:"📦",ente:"Fornitore autorizzato — azienda / P.IVA",albo:false}
 ];
 function profByName(v){return PROFS.find(p=>p.v===v)||PROFS[0];}
@@ -4503,7 +4513,7 @@ function terminiHTML(){
   <div class="topbar" style="padding-top:0"><div class="hello"><div class="k">Trasparenza</div><div class="n">⚖️ Termini e responsabilità</div></div></div>
   <div class="card">
     <div class="h">Ruolo di Auréa</div>
-    <div class="sub">Auréa è una <b>piattaforma tecnologica di intermediazione</b>: mette in contatto utenti e professionisti (nutrizionisti, medici, estetisti, trainer, ecc.) e ospita la vendita di integratori inseriti da terzi. Auréa <b>non eroga</b> prestazioni sanitarie, mediche o professionali e non è parte del rapporto tra utente e professionista.</div>
+    <div class="sub">Auréa è una <b>piattaforma tecnologica di intermediazione</b>: mette in contatto utenti e professionisti (nutrizionisti, medici, trainer, ecc.) e ospita la vendita di integratori inseriti da terzi. Auréa <b>non eroga</b> prestazioni sanitarie, mediche o professionali e non è parte del rapporto tra utente e professionista.</div>
   </div>
   <div class="card">
     <div class="h">Veridicità dei titoli</div>
