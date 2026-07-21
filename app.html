@@ -692,8 +692,19 @@ function preloadCloud(){ renderNav(); if(S.pro && S.pro.status==='in_verifica'){
 }
 // Elenco pubblico degli iscritti (solo id + nome), per farli trovare e seguire senza cercarli
 let DIRECTORY=[], _dirLoaded=false, _dirFetching=false;
-async function cloudRegisterDirectory(){ if(!cloudOn()||!cloudUser)return; try{ await SB.from('directory').upsert({id:cloudUser.id,name:(S.user&&S.user.name)||'Utente',updated_at:new Date().toISOString()}); }catch(e){} }
-async function cloudLoadDirectory(){ if(!cloudOn()){DIRECTORY=[];return [];} try{ const {data,error}=await SB.from('directory').select('id,name').order('name',{ascending:true}).limit(500); if(error)throw error; DIRECTORY=(data||[]).filter(u=>u&&u.name); return DIRECTORY; }catch(e){ return DIRECTORY; } }
+async function cloudRegisterDirectory(){ if(!cloudOn()||!cloudUser)return; const row={id:cloudUser.id,name:(S.user&&S.user.name)||'Utente',avatar:(S.user&&S.user.avatar)||null,updated_at:new Date().toISOString()}; try{ let {error}=await SB.from('directory').upsert(row); if(error&&/column|avatar/i.test(error.message||'')){ delete row.avatar; await SB.from('directory').upsert(row); } }catch(e){} }
+async function cloudLoadDirectory(){ if(!cloudOn()){DIRECTORY=[];return [];} try{ let {data,error}=await SB.from('directory').select('id,name,avatar').order('name',{ascending:true}).limit(500); if(error&&/column|avatar/i.test(error.message||'')){ const r2=await SB.from('directory').select('id,name').order('name',{ascending:true}).limit(500); data=r2.data; error=r2.error; } if(error)throw error; DIRECTORY=(data||[]).filter(u=>u&&u.name); (data||[]).forEach(u=>{ if(u.avatar)AVATARS[u.id]=u.avatar; }); return DIRECTORY; }catch(e){ return DIRECTORY; } }
+/* ===== Foto profilo (visibile a tutti) ===== */
+let AVATARS={};
+function AV(uid){ return (uid&&AVATARS[uid])||null; }
+function avFill(url){ return `<img src="${(url||'').replace(/"/g,'&quot;')}" style="width:100%;height:100%;object-fit:cover" alt="">`; }
+function myAvatarTop(){ return `<div class="avatar" onclick="go('profilo')" style="overflow:hidden;padding:0">${(S.user&&S.user.avatar)?avFill(S.user.avatar):(S.user?S.user.initials:'')}</div>`; }
+function changeAvatar(){ if(!(cloudOn()&&loggedIn())){ toast("Attiva l'account per la foto profilo"); go('cloud'); return; }
+  fileFallback(async(dataUrl,file)=>{ if(!dataUrl&&!file)return; toast('Carico la foto…');
+    try{ const url=file?await uploadBlob(file,file.name||'avatar.jpg'):await dataUrlToUrl(dataUrl,'avatar.jpg');
+      S.user.avatar=url; AVATARS[cloudUser.id]=url; save(); try{await cloudSaveProfile();}catch(e){} try{await cloudRegisterDirectory();}catch(e){}
+      rebuild('profilo'); try{rebuild('home');}catch(e){} toast('Foto profilo aggiornata ✓'); }
+    catch(e){ toast('Foto non caricata: '+(e.message||e)); } }, 'image/*'); }
 async function cloudCheckSession(){ if(!cloudOn())return null; try{ const {data}=await SB.auth.getSession(); cloudUser=data&&data.session?data.session.user:null; if(cloudUser){ const had=await cloudLoadProfile(); postAuth(had); } }catch(e){} return cloudUser; }
 async function cloudSignUp(email,pass){
   const {data,error}=await SB.auth.signUp({email,password:pass}); if(error) throw error;
@@ -727,7 +738,7 @@ async function cloudSaveProfile(){
   cloudRegisterDirectory();
   // scheda PUBBLICA del professionista (senza dati sanitari privati)
   try{
-    if(S.pro){ await SB.from('pros').upsert({ id:cloudUser.id, name:S.pro.name||S.user.name, profession:S.pro.profession||'', ic:S.pro.ic||'👤', price:S.pro.price||'€—', ente:S.pro.ente||'', followers:S.pro.followers||0, modes:['Online','In studio'], avail:S.pro.avail||[], recommends:S.pro.recommends||[], status:S.pro.status||'in_verifica', updated_at:new Date().toISOString() }); }
+    if(S.pro){ const prow={ id:cloudUser.id, name:S.pro.name||S.user.name, profession:S.pro.profession||'', ic:S.pro.ic||'👤', avatar:S.user.avatar||null, price:S.pro.price||'€—', ente:S.pro.ente||'', followers:S.pro.followers||0, modes:['Online','In studio'], avail:S.pro.avail||[], recommends:S.pro.recommends||[], status:S.pro.status||'in_verifica', updated_at:new Date().toISOString() }; let {error:pe}=await SB.from('pros').upsert(prow); if(pe&&/column|avatar/i.test(pe.message||'')){ delete prow.avatar; await SB.from('pros').upsert(prow); } }
   }catch(e){}
 }
 async function cloudLoadProfile(){
@@ -1464,7 +1475,7 @@ function homeHTML(){
   return `
   <div class="topbar">
     <div class="hello"><div class="k">Il tuo benessere</div><div class="n">Ciao, ${S.user.name||'benvenuta'} <span style="color:var(--amber);vertical-align:-3px;display:inline-block">${ic('sparkle',19)}</span></div></div>
-    <div class="avatar" onclick="go('profilo')">${S.user.initials}</div>
+    ${myAvatarTop()}
   </div>
 
   <div class="banner gg" onclick="go('prenota')" style="cursor:pointer"><span class="b-ic" style="opacity:.2">${ic('cross',78)}</span><h4>Trova il tuo professionista</h4><p>Nutrizionisti, medici e trainer verificati: prenota, fai videoconsulti e chatta con loro.</p></div>
@@ -1980,7 +1991,7 @@ function printWeek(plan,wp){
 function planHTML(){
   const wp=weightPlan();
   return `
-  <div class="topbar"><div class="hello"><div class="k">Obiettivo: ${S.user.goal}</div><div class="n">Piano nutrizionale</div></div><div class="avatar" onclick="go('profilo')">${S.user.initials}</div></div>
+  <div class="topbar"><div class="hello"><div class="k">Obiettivo: ${S.user.goal}</div><div class="n">Piano nutrizionale</div></div>${myAvatarTop()}</div>
 
   <div class="banner gg"><span class="b-ic">🥗</span><h4>${wp.kcal.toLocaleString('it-IT')} kcal · ${mealSet().length} pasti${fastActive()?' · digiuno '+S.fasting.proto:''}</h4><p>${fastActive()?`Piano adattato al digiuno ${S.fasting.proto}: pasti nella finestra ${S.fasting.start}–${S.fasting.end}.`:`Piano calcolato per portarti da ${S.wStart} a ${S.wGoal} kg (~${wp.weeklyKg} kg/sett). Scegli tra più opzioni per ogni pasto e adattalo ai tuoi gusti.`}</p></div>
 
@@ -2123,7 +2134,7 @@ function cicloHTML(){
   const ov=c.start+c.cycleLen-14; const np=c.start+c.cycleLen;
   const days=Array.from({length:35},(_,i)=>i+1);
   return `
-  <div class="topbar"><div class="hello"><div class="k">Ciclo · giorno ${dc} di ${c.cycleLen}</div><div class="n">Salute femminile 🌸</div></div><div class="avatar" onclick="go('profilo')">${S.user.initials}</div></div>
+  <div class="topbar"><div class="hello"><div class="k">Ciclo · giorno ${dc} di ${c.cycleLen}</div><div class="n">Salute femminile 🌸</div></div>${myAvatarTop()}</div>
 
   <div class="banner gp"><span class="b-ic">🌸</span><h4>Fase ${ph.n.toLowerCase()}</h4><p>${ph.txt} Prossime mestruazioni stimate: ${fmtDay(np)}.</p></div>
 
@@ -2209,7 +2220,8 @@ const DOCTORS=[];
 let CLOUD_DOCS=[], _docsLoaded=false, _docsFetching=false;
 async function cloudLoadDocs(){ if(!cloudOn()){CLOUD_DOCS=[];return [];}
   try{ const {data,error}=await SB.from('pros').select('*').eq('status','verificato'); if(error)throw error;
-    CLOUD_DOCS=(data||[]).map(r=>({id:r.id,n:r.name||'Professionista',s:r.profession||'',ic:r.ic||'👤',r:'5.0',p:r.price||'€—',tags:r.modes||['Online','In studio'],when:'Disponibile',v:true,f:r.followers||0,nr:0,ente:r.ente||'',cloud:true,avail:r.avail||[],recommends:r.recommends||[]}));
+    CLOUD_DOCS=(data||[]).map(r=>({id:r.id,n:r.name||'Professionista',s:r.profession||'',ic:r.ic||'👤',avatar:r.avatar||null,r:'5.0',p:r.price||'€—',tags:r.modes||['Online','In studio'],when:'Disponibile',v:true,f:r.followers||0,nr:0,ente:r.ente||'',cloud:true,avail:r.avail||[],recommends:r.recommends||[]}));
+    (data||[]).forEach(r=>{ if(r.avatar)AVATARS[r.id]=r.avatar; });
     return CLOUD_DOCS; }catch(e){ return CLOUD_DOCS; } }
 async function cloudLoadAllPros(){ if(!cloudOn())return []; try{ const {data,error}=await SB.from('pros').select('*').order('updated_at',{ascending:false}); if(error)throw error; return data||[]; }catch(e){ return []; } }
 function docReviews(name){return (S.docReviews&&S.docReviews[name])||[];}
@@ -2220,12 +2232,12 @@ const SPECS=["Tutti","Nutrizionista","Psicologa","Diabetologo","Dermatologo","Gi
 function prenotaHTML(){
   if(isProMode()){
     return `
-  <div class="topbar"><div class="hello"><div class="k">La tua agenda</div><div class="n">📅 Appuntamenti clienti</div></div><div class="avatar" onclick="go('profilo')">${S.user.initials}</div></div>
+  <div class="topbar"><div class="hello"><div class="k">La tua agenda</div><div class="n">📅 Appuntamenti clienti</div></div>${myAvatarTop()}</div>
   <div class="banner gg"><span class="b-ic" style="opacity:.18">${ic('calendar',78)}</span><h4>Agenda professionista</h4><p>Qui trovi gli appuntamenti prenotati dai clienti. Per quelli online avvii la videoconsulenza con un tocco.</p></div>
   <div id="pro-agenda"><div class="card"><div class="sub">Caricamento…</div></div></div>`;
   }
   return `
-  <div class="topbar"><div class="hello"><div class="k">Salute · Estetica · Benessere</div><div class="n">Prenota appuntamento</div></div><div class="avatar" onclick="go('profilo')">${S.user.initials}</div></div>
+  <div class="topbar"><div class="hello"><div class="k">Salute · Estetica · Benessere</div><div class="n">Prenota appuntamento</div></div>${myAvatarTop()}</div>
 
   <div class="chips" style="margin-bottom:16px;overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px" id="spec-filter">
     ${SPECS.map((s,i)=>`<button class="chip ${i===0?'sel':''}" style="white-space:nowrap" onclick="filterDocs('${s}',this)">${s}</button>`).join('')}
@@ -2587,7 +2599,7 @@ function renderDocs(filter){
   if(!list.length){ c.innerHTML=`<div class="card" style="text-align:center"><div style="font-size:44px">🩺</div><div class="h" style="justify-content:center">Nessun professionista ancora</div><div class="sub">Stiamo attivando i primi professionisti verificati. ${cloudOn()?'':'Attiva la modalità cloud per vederli.'} Sei un professionista? <a onclick="go('pro')" style="color:var(--green-d);font-weight:700;cursor:pointer">Registrati qui →</a></div></div>`; return; }
   c.innerHTML=list.map((d,i)=>`
     <div class="pro" style="flex-wrap:wrap">
-      <div class="ph">${d.ic}</div>
+      <div class="ph" style="overflow:hidden;padding:0">${d.avatar?avFill(d.avatar):d.ic}</div>
       <div class="pi">
         <b>${d.n} ${d.v?'<span title="Verificato" style="color:var(--green-d)">✔️</span>':''}</b>
         <small>${d.s}</small>
@@ -3505,8 +3517,9 @@ function profiloHTML(){
   <div class="topbar"><div class="hello"><div class="k">Il tuo account</div><div class="n">Profilo</div></div></div>
 
   <div class="card" style="text-align:center">
-    <div class="avatar" style="width:80px;height:80px;border-radius:26px;font-size:32px;margin:0 auto 12px">${S.user.initials}</div>
+    <div class="avatar" onclick="changeAvatar()" style="width:88px;height:88px;border-radius:28px;font-size:34px;margin:0 auto 8px;overflow:hidden;padding:0;cursor:pointer;position:relative">${S.user.avatar?avFill(S.user.avatar):S.user.initials}<span style="position:absolute;right:-2px;bottom:-2px;width:30px;height:30px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 2px 6px rgba(0,0,0,.2)">📷</span></div>
     <div style="font-size:20px;font-weight:800">${S.user.name}</div>
+    <div class="tiny" style="margin-top:2px;cursor:pointer" onclick="changeAvatar()">${S.user.avatar?'Cambia foto profilo':'Aggiungi una foto profilo'}</div>
   </div>
 
   <div class="card">
@@ -3633,7 +3646,7 @@ const PLAN_EV={
 S.calSel=19;
 function planningHTML(){
   return `
-  <div class="topbar"><div class="hello"><div class="k">Tutto collegato in un posto</div><div class="n">📆 Planning</div></div><div class="avatar" onclick="go('profilo')">${S.user.initials}</div></div>
+  <div class="topbar"><div class="hello"><div class="k">Tutto collegato in un posto</div><div class="n">📆 Planning</div></div>${myAvatarTop()}</div>
 
   <div class="seg" id="plan-tab" style="margin-bottom:16px">
     <button class="on" onclick="planTab('cal',this)">Calendario</button>
@@ -3758,7 +3771,7 @@ const MOOD_EMO=[{v:5,e:"😄",l:"Ottima"},{v:4,e:"🙂",l:"Bene"},{v:3,e:"😐",
 const MOOD_COL={5:"#1fae7e",4:"#7ed957",3:"#f5a623",2:"#ff9a7a",1:"#ff6f8b",0:"#e7ede9"};
 function benessereHTML(){
   return `
-  <div class="topbar"><div class="hello"><div class="k">Il tuo spazio · niente giudizi</div><div class="n">💚 Benessere emotivo</div></div><div class="avatar" onclick="go('profilo')">${S.user.initials}</div></div>
+  <div class="topbar"><div class="hello"><div class="k">Il tuo spazio · niente giudizi</div><div class="n">💚 Benessere emotivo</div></div>${myAvatarTop()}</div>
 
   <div class="card">
     <div class="h">Come ti senti oggi?</div>
@@ -3906,7 +3919,8 @@ function loadSearchData(){
   runSearch();
 }
 function personRow(id,name){ const nm=(name||'Utente'); const me=cloudUser&&id===cloudUser.id;
-  return `<div class="row"><div class="ri" style="background:var(--mint);color:var(--green-d);${!me?'cursor:pointer':''}" ${!me?`onclick="tapAuthor('${id}','${nm.replace(/'/g,'')}')"`:''}>${(nm.trim()[0]||'U').toUpperCase()}</div><div class="rt" style="flex:1"><b>${nm.replace(/</g,'&lt;')}${me?' <span style="color:var(--muted);font-weight:400">(tu)</span>':''}</b></div>${!me?`<button class="btn sm sec" style="width:auto;padding:7px 10px;font-size:12px;margin-right:6px" onclick="openChatWith('${id}','${nm.replace(/'/g,'')}')">💬</button><button class="btn sm sec" data-fuid="${id}" style="width:auto;padding:7px 12px;font-size:12px" onclick="toggleFollowReal('${id}',this)">${isFollowingId(id)?'Segui già':'+ Segui'}</button>`:''}</div>`;
+  const avu=me?((S.user&&S.user.avatar)||AV(id)):AV(id);
+  return `<div class="row"><div class="ri" style="background:var(--mint);color:var(--green-d);overflow:hidden;padding:0;${!me?'cursor:pointer':''}" ${!me?`onclick="tapAuthor('${id}','${nm.replace(/'/g,'')}')"`:''}>${avu?avFill(avu):(nm.trim()[0]||'U').toUpperCase()}</div><div class="rt" style="flex:1"><b>${nm.replace(/</g,'&lt;')}${me?' <span style="color:var(--muted);font-weight:400">(tu)</span>':''}</b></div>${!me?`<button class="btn sm sec" style="width:auto;padding:7px 10px;font-size:12px;margin-right:6px" onclick="openChatWith('${id}','${nm.replace(/'/g,'')}')">💬</button><button class="btn sm sec" data-fuid="${id}" style="width:auto;padding:7px 12px;font-size:12px" onclick="toggleFollowReal('${id}',this)">${isFollowingId(id)?'Segui già':'+ Segui'}</button>`:''}</div>`;
 }
 function runSearch(){
   const el=document.getElementById('search-results'); if(!el)return;
@@ -3923,7 +3937,7 @@ function runSearch(){
   // Professionisti
   if(f==='Tutti'||f==='Professionisti'){
     const docs=(CLOUD_DOCS||[]).filter(d=>((d.n||'')+' '+(d.s||'')+' '+(d.ente||'')).toLowerCase().includes(q));
-    if(docs.length) html+=`<div class="section-title" style="margin-top:0">Professionisti</div>`+docs.slice(0,10).map(d=>`<div class="pro"><div class="ph">${d.ic||'👤'}</div><div class="pi"><b>${d.n} ${d.v?'✔️':''}</b><small>${d.s} · ${d.ente||''}</small></div><div style="align-self:center"><button class="btn sm" style="width:auto;padding:8px 12px" onclick="openBooking('${(d.n||'').replace(/'/g,'')}','${(d.s||'').replace(/'/g,'')}','${d.ic||'👤'}','${d.id||''}')">Prenota</button></div></div>`).join('');
+    if(docs.length) html+=`<div class="section-title" style="margin-top:0">Professionisti</div>`+docs.slice(0,10).map(d=>`<div class="pro"><div class="ph" style="overflow:hidden;padding:0">${d.avatar?avFill(d.avatar):(d.ic||'👤')}</div><div class="pi"><b>${d.n} ${d.v?'✔️':''}</b><small>${d.s} · ${d.ente||''}</small></div><div style="align-self:center"><button class="btn sm" style="width:auto;padding:8px 12px" onclick="openBooking('${(d.n||'').replace(/'/g,'')}','${(d.s||'').replace(/'/g,'')}','${d.ic||'👤'}','${d.id||''}')">Prenota</button></div></div>`).join('');
   }
   // Utenti (tutti gli iscritti dalla directory + autori dei post)
   if(f==='Tutti'||f==='Utenti'){
@@ -4001,7 +4015,7 @@ function feedPostCard(p){
   const oid=p.user_id||'';
   return `<div class="card" style="padding:0;overflow:hidden;margin-bottom:14px" data-pid="${p.id}">
     <div class="row" style="padding:12px 12px 10px;align-items:center;margin:0">
-      <div class="ri" style="background:var(--mint);color:var(--green-d);font-weight:800;${(oid&&cloudUser&&oid!==cloudUser.id)?'cursor:pointer':''}" ${(oid&&cloudUser&&oid!==cloudUser.id)?`onclick="tapAuthor('${oid}','${(p.author||'').replace(/'/g,'')}')"`:''}>${av}</div>
+      <div class="ri" style="background:var(--mint);color:var(--green-d);font-weight:800;overflow:hidden;padding:0;${(oid&&cloudUser&&oid!==cloudUser.id)?'cursor:pointer':''}" ${(oid&&cloudUser&&oid!==cloudUser.id)?`onclick="tapAuthor('${oid}','${(p.author||'').replace(/'/g,'')}')"`:''}>${AV(oid)?avFill(AV(oid)):av}</div>
       <div class="rt" style="flex:1;${(oid&&cloudUser&&oid!==cloudUser.id)?'cursor:pointer':''}" ${(oid&&cloudUser&&oid!==cloudUser.id)?`onclick="tapAuthor('${oid}','${(p.author||'').replace(/'/g,'')}')"`:''}><b>${(p.author||'utente').replace(/</g,'&lt;')}</b><small>${(p.type||'Post')}${timeAgo(p.created_at)?' · '+timeAgo(p.created_at):''}</small></div>
       ${(oid&&cloudUser&&oid!==cloudUser.id)?`<button class="btn sm sec" data-fuid="${oid}" style="width:auto;padding:6px 12px;font-size:12px" onclick="toggleFollowReal('${oid}',this)">${isFollowingId(oid)?'Segui già':'+ Segui'}</button>`:''}
     </div>
@@ -4157,7 +4171,7 @@ function openComments(pid,ownerId){
 }
 function renderComments(pid){ const el=document.getElementById('cmt-list'); if(!el)return;
   if(!(cloudOn()&&loggedIn())){ el.innerHTML='<div class="sub" style="text-align:center;padding:16px">Accedi per commentare.</div>'; return; }
-  cloudLoadComments(pid).then(list=>{ el.innerHTML=list.length?list.map(c=>`<div class="row" style="padding:8px 0"><div class="rt"><b style="color:var(--green-d);font-size:12px">@${(c.author||'utente')}</b><small style="white-space:normal">${(c.text||'').replace(/</g,'&lt;')}</small></div></div>`).join(''):'<div class="sub" style="text-align:center;padding:16px">Nessun commento. Scrivi il primo!</div>'; });
+  cloudLoadComments(pid).then(list=>{ el.innerHTML=list.length?list.map(c=>{ const a=AV(c.user_id); return `<div class="row" style="padding:8px 0"><div class="ri" style="width:34px;height:34px;flex:0 0 34px;border-radius:11px;background:var(--mint);color:var(--green-d);font-weight:800;overflow:hidden;padding:0;display:flex;align-items:center;justify-content:center;font-size:13px">${a?avFill(a):((c.author||'U').trim()[0]||'U').toUpperCase()}</div><div class="rt"><b style="color:var(--green-d);font-size:12px">@${(c.author||'utente')}</b><small style="white-space:normal">${(c.text||'').replace(/</g,'&lt;')}</small></div></div>`; }).join(''):'<div class="sub" style="text-align:center;padding:16px">Nessun commento. Scrivi il primo!</div>'; });
 }
 async function sendComment(pid){ const el=document.getElementById('cmt-in'); const t=(el&&el.value||'').trim(); if(!t)return; if(!(cloudOn()&&loggedIn())){toast('Accedi per commentare');return;} el.value='';
   try{ await cloudAddComment(pid,t); COMMENT_COUNTS[pid]=(COMMENT_COUNTS[pid]||0)+1; if(_cmtOwner)cloudNotify(_cmtOwner,'comment',{post_id:pid,text:t}); try{bumpActivity(1);}catch(e){} renderComments(pid); }catch(e){ toast('Errore: '+(e.message||e)); } }
@@ -4452,7 +4466,7 @@ S.chat=[
 S.fridge=[];
 function frigoHTML(){
   return `
-  <div class="topbar"><div class="hello"><div class="k">Collegato al tuo piano nutrizionale</div><div class="n">🧊 Il tuo frigo</div></div><div class="avatar" onclick="go('profilo')">${S.user.initials}</div></div>
+  <div class="topbar"><div class="hello"><div class="k">Collegato al tuo piano nutrizionale</div><div class="n">🧊 Il tuo frigo</div></div>${myAvatarTop()}</div>
 
   <div class="card" style="text-align:center;background:linear-gradient(135deg,#10201a,#1c3830);color:#fff">
     <div style="height:180px;border-radius:16px;border:2px dashed rgba(255,255,255,.3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px">
