@@ -2446,6 +2446,31 @@ async function cloudDeleteProduct(id){ if(!cloudOn())return {error:new Error('of
 function allProducts(){ if(cloudOn()) return CLOUD_PRODUCTS.slice(); return (S.customProducts||[]); }
 // Vendita integratori: SOLO i fornitori autorizzati verificati, oppure l'admin.
 function canSell(){ return isAdmin() || !!(S.pro && S.pro.status==='verificato' && /fornitore/i.test(S.pro.profession||'')); }
+
+/* ===== MARKETPLACE · conto pagamenti del venditore (Stripe Connect) ===== */
+let PAY={account:null,enabled:false,loaded:false};
+async function cloudLoadPayStatus(){ if(!cloudOn()||!cloudUser){PAY={account:null,enabled:false,loaded:true};return PAY;}
+  try{ const {data}=await SB.from('profiles').select('stripe_account_id,payouts_enabled').eq('id',cloudUser.id).maybeSingle();
+    PAY={account:(data&&data.stripe_account_id)||null,enabled:!!(data&&data.payouts_enabled),loaded:true}; }catch(e){ PAY.loaded=true; }
+  return PAY; }
+async function connectStripe(){
+  if(!(cloudOn()&&loggedIn())){ toast('Accedi prima'); go('cloud'); return; }
+  toast('Apertura configurazione pagamenti…');
+  try{ const {data,error}=await SB.functions.invoke('connect-onboard',{ body:{ return_url:location.href } });
+    if(error)throw error; if(data&&data.error)throw new Error(data.error);
+    if(data&&data.url){ location.href=data.url; return; }
+    throw new Error('Link non ricevuto');
+  }catch(e){ toast('Configurazione non disponibile: '+(e.message||e)+' — verifica di aver installato la funzione connect-onboard.'); }
+}
+function renderPayStatus(){ const c=document.getElementById('pay-status'); if(!c)return;
+  if(!(cloudOn()&&loggedIn())){ c.innerHTML='<div class="sub">Accedi per configurare i pagamenti.</div>'; return; }
+  c.innerHTML='<div class="sub">Controllo stato…</div>';
+  cloudLoadPayStatus().then(()=>{
+    if(PAY.enabled){ c.innerHTML='<div class="alert ok" style="margin:0"><span>✅</span><div><b>Conto collegato.</b> Ricevi i pagamenti dei tuoi clienti sul tuo conto; Auréa trattiene la commissione concordata.</div></div>'; }
+    else if(PAY.account){ c.innerHTML='<div class="alert info" style="margin:0"><span>⏳</span><div>Iscrizione avviata ma non ancora completa. Termina la procedura per ricevere i pagamenti.</div></div><button class="btn sm" style="margin-top:10px" onclick="connectStripe()">Completa la configurazione</button>'; }
+    else { c.innerHTML='<div class="sub" style="margin-bottom:10px">Collega il tuo conto per <b>ricevere direttamente i pagamenti</b> dei tuoi prodotti/servizi. La procedura è gestita da Stripe (IBAN e documenti restano su Stripe, in sicurezza).</div><button class="btn sm" onclick="connectStripe()">💳 Collega il conto per essere pagato</button>'; }
+  });
+}
 // solo i PERSONAL TRAINER verificati possono caricare video di allenamento
 function canTrainer(){ return !!(S.pro && S.pro.status==='verificato' && /trainer|scienze motorie|coni/i.test((S.pro.profession||'')+' '+(S.pro.ente||''))); }
 let CLOUD_WORKOUTS=[], _wkLoaded=false, _wkFetching=false;
@@ -2834,7 +2859,7 @@ function addProduct(){
     }
   });
 }
-function addCart(i){const p=allProducts()[i];if(!p)return;const e=S.cart.find(x=>x.n===p.n);if(e)e.q++;else S.cart.push({n:p.n,p:+p.p,q:1});save();renderCartBadge();const b=document.getElementById('shopcart');if(b){const c=cartCount();b.style.display=c?'flex':'none';b.textContent=c;}toast(p.n+' aggiunto al carrello');}
+function addCart(i){const p=allProducts()[i];if(!p)return;const e=S.cart.find(x=>x.n===p.n);if(e)e.q++;else S.cart.push({n:p.n,p:+p.p,q:1,seller:p.owner||null});save();renderCartBadge();const b=document.getElementById('shopcart');if(b){const c=cartCount();b.style.display=c?'flex':'none';b.textContent=c;}toast(p.n+' aggiunto al carrello');}
 function cartQty(n,delta){const it=S.cart.find(x=>x.n===n);if(!it)return;it.q+=delta;if(it.q<=0){S.cart=S.cart.filter(x=>x.n!==n);}save();renderCartBadge();openCart();}
 function openCart(){
   go('carrello');
@@ -2867,13 +2892,17 @@ async function checkout(){
   toast('Apertura pagamento sicuro Stripe…');
   const items=S.cart.map(x=>({name:x.n,price:+x.p,qty:x.q}));
   const amount=items.reduce((a,b)=>a+b.price*b.qty,0);
+  // marketplace: se il carrello è di UN solo venditore, il pagamento va a lui
+  // (con commissione Auréa); se ci sono più venditori, incassa la piattaforma.
+  const sellerSet=new Set(S.cart.map(x=>x.seller).filter(Boolean));
+  const seller_id=(sellerSet.size===1)?[...sellerSet][0]:null;
   let orderId=null;
   try{ // registra l'ordine (tracciabilità) come "in attesa di pagamento"
     const {data}=await SB.from('orders').insert({user_id:cloudUser.id,items:items,amount:amount,currency:'eur',status:'pending'}).select().single();
     orderId=data&&data.id;
   }catch(e){}
   try{
-    const {data,error}=await SB.functions.invoke('create-checkout',{ body:{ items, order_id:orderId, success_url:location.href, cancel_url:location.href } });
+    const {data,error}=await SB.functions.invoke('create-checkout',{ body:{ items, order_id:orderId, seller_id, success_url:location.href, cancel_url:location.href } });
     if(error)throw error;
     if(data&&data.error)throw new Error(data.error);
     if(data&&data.url){ location.href=data.url; return; }
@@ -4649,6 +4678,11 @@ function proStatusHTML(){
   </div>
 
   <div class="card">
+    <div class="h">💳 Pagamenti (ricevi i tuoi incassi)</div>
+    <div id="pay-status"><div class="sub">Controllo stato…</div></div>
+  </div>
+
+  <div class="card">
     <div class="h">📅 Le tue disponibilità</div>
     <div class="sub" style="margin-bottom:10px">Aggiungi i giorni e gli orari in cui i pazienti possono prenotarti. Compaiono nel loro calendario in fase di prenotazione.</div>
     <div id="pro-avail"></div>
@@ -4875,7 +4909,7 @@ function afterRender(id){
   if(id==='community'){renderComBody('perte');}
   if(id==='storia'){renderIntol();}
   if(id==='digiuno'){fastStatus();updateFastEnd();}
-  if(id==='pro'){renderProAvail();}
+  if(id==='pro'){renderProAvail(); if(S.pro)renderPayStatus();}
   if(id==='admin'){renderAdmin();}
   if(id==='ordini'){renderOrders();}
   if(id==='allenamento'){ if(cloudOn()&&!_wkLoaded&&!_wkFetching){ _wkFetching=true; cloudLoadWorkouts().then(()=>{ _wkLoaded=true; _wkFetching=false; if(curScreen==='allenamento')rebuild('allenamento'); }); } }
