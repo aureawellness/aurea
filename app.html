@@ -2378,13 +2378,14 @@ async function openLive(roomName,opts){
       <button class="live-ctrl" onclick="liveSendChat()">➤</button>
     </div>`;
   host.appendChild(box);
+  _live={room:null,isHost,roomName,micOn:isHost,camOn:isHost};   // impostato subito: così "Termina" chiude sempre la diretta, anche se il video non parte
   try{
     await ensureLiveKit();
     const {data,error}=await SB.functions.invoke('livekit-token',{body:{room:roomName,name:(S.user.name||'Utente'),host:isHost}});
     if(error||!data||!data.token) throw new Error((error&&error.message)||'token non disponibile — controlla la funzione livekit-token');
     const LK=window.LivekitClient;
     const room=new LK.Room({adaptiveStream:true,dynacast:true});
-    _live={room,isHost,roomName,micOn:isHost,camOn:isHost};
+    _live.room=room;
     room.on(LK.RoomEvent.TrackSubscribed,(track)=>{ const el=track.attach();
       if(track.kind==='video'){ el.className='live-remote-video'; const v=document.getElementById('live-video'); if(v){v.innerHTML='';v.appendChild(el);} }
       else { el.style.display='none'; document.body.appendChild(el); } });
@@ -2447,7 +2448,7 @@ function renderHomeLive(){ const c=document.getElementById('home-live'); if(!c)r
 function watchLive(room,hostId,hostName){ if(!(cloudOn()&&loggedIn())){ toast('Accedi per guardare la diretta'); go('cloud'); return; } openLive(room,{host:false,hostId:hostId||'',title:hostName?('Diretta di '+hostName):'🔴 Diretta live'}); }
 function startDiretta(){ if(!isProMode()&&!isAdmin()){toast('Solo i professionisti possono trasmettere');return;} if(!(cloudOn()&&loggedIn())){toast('Accedi per trasmettere');go('cloud');return;}
   openForm({title:'Avvia una diretta',subtitle:'Dai un titolo alla tua diretta',fields:[{id:'t',label:'Titolo',ph:'es. Allenamento full body'}],submit:'🔴 Vai in diretta',
-    onSubmit:async(v)=>{ const t=(v.t||'').trim()||'Diretta'; try{ const live=await cloudStartLive(t); openLive(live.room,{host:true,hostId:cloudUser.id,title:'🔴 '+t}); toast('Sei in diretta! 🔴'); }catch(e){ toast('Errore: '+(e.message||e)); return false; } }
+    onSubmit:async(v)=>{ const t=(v.t||'').trim()||'Diretta'; try{ await cloudStopLive(); const live=await cloudStartLive(t); openLive(live.room,{host:true,hostId:cloudUser.id,title:'🔴 '+t}); toast('Sei in diretta! 🔴'); }catch(e){ toast('Errore: '+(e.message||e)); return false; } }
   });
 }
 let CLOUD_APPTS=[];
