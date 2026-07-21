@@ -2444,7 +2444,8 @@ async function cloudAddProduct(o){ const row={owner_id:cloudUser.id,name:o.n,des
   if(error)throw error; return data; }
 async function cloudDeleteProduct(id){ if(!cloudOn())return {error:new Error('offline')}; try{ return await SB.from('products').delete().eq('id',id); }catch(e){ return {error:e}; } }
 function allProducts(){ if(cloudOn()) return CLOUD_PRODUCTS.slice(); return (S.customProducts||[]); }
-function canSell(){ return !!(S.pro && S.pro.status==='verificato'); }
+// Vendita integratori: SOLO i fornitori autorizzati verificati, oppure l'admin.
+function canSell(){ return isAdmin() || !!(S.pro && S.pro.status==='verificato' && /fornitore/i.test(S.pro.profession||'')); }
 // solo i PERSONAL TRAINER verificati possono caricare video di allenamento
 function canTrainer(){ return !!(S.pro && S.pro.status==='verificato' && /trainer|scienze motorie|coni/i.test((S.pro.profession||'')+' '+(S.pro.ente||''))); }
 let CLOUD_WORKOUTS=[], _wkLoaded=false, _wkFetching=false;
@@ -2761,7 +2762,7 @@ function shopHTML(){
   <div class="topbar"><div class="hello"><div class="k">Integratori · ${prods.length} prodotti</div><div class="n">🛍️ Integratori</div></div>
     <button class="avatar" style="border:none;position:relative" onclick="openCart()">🛒<span class="cartbadge" id="shopcart" style="display:none"></span></button></div>
 
-  ${canSell()?`<button class="btn ghost sm" style="margin-bottom:12px" onclick="addProduct()">＋ Inserisci un tuo prodotto (creator verificato)</button>`:`<div class="alert info" style="padding:10px 12px"><span>🛒</span><div>I professionisti verificati possono inserire prodotti reali. Diventa professionista in Profilo.</div></div>`}
+  ${canSell()?`<button class="btn ghost sm" style="margin-bottom:12px" onclick="addProduct()">＋ Inserisci un integratore in vendita</button>`:`<div class="alert info" style="padding:10px 12px"><span>🛒</span><div>Gli integratori in vendita possono essere inseriti <b>solo dai fornitori autorizzati</b>. Sei un fornitore? Registrati come <b>“Fornitore autorizzato”</b> in Profilo → Diventa professionista.</div></div>`}
 
   ${prods.length?`<div class="grid2" id="prod-grid">
     ${slice.map((p)=>{const gi=prods.indexOf(p);return `
@@ -2811,7 +2812,7 @@ function delProduct(i){ const p=allProducts()[i]; if(!p)return; confirmBox('Elim
     const box=document.querySelector('.app-modal'); if(box)box.remove(); rebuild('shop'); go('shop'); toast('Prodotto eliminato');
   },{icon:'🗑️',yes:'Elimina',danger:true}); }
 function addProduct(){
-  if(!canSell()){toast('Solo i professionisti verificati possono inserire prodotti');return;}
+  if(!canSell()){toast('Solo i fornitori autorizzati o admin possono inserire integratori in vendita');return;}
   openForm({title:'Nuovo prodotto',subtitle:'Aggiungi una foto reale e le info dell\'integratore',
     fields:[
       {id:'img',label:'Fotografia del prodotto',type:'photo'},
@@ -4357,7 +4358,8 @@ const PROFS=[
   {v:"Endocrinologo",ic:"⚕️",ente:"Ordine dei Medici (OMCeO / FNOMCeO)",albo:true},
   {v:"Psicologo",ic:"🧠",ente:"Ordine degli Psicologi (regionale)",albo:true},
   {v:"Personal Trainer",ic:"🏋️",ente:"Laurea Scienze Motorie / cert. CONI",albo:false},
-  {v:"Estetista",ic:"💆",ente:"Qualifica professionale regionale",albo:false}
+  {v:"Estetista",ic:"💆",ente:"Qualifica professionale regionale",albo:false},
+  {v:"Fornitore autorizzato (vendita integratori)",ic:"📦",ente:"Fornitore autorizzato — azienda / P.IVA",albo:false}
 ];
 function profByName(v){return PROFS.find(p=>p.v===v)||PROFS[0];}
 const ITA_UNI={
@@ -4396,10 +4398,11 @@ function proHTML(){
   return `<button class="back" onclick="go('profilo')">← Profilo</button>
   <div class="topbar" style="padding-top:0"><div class="hello"><div class="k">Lavora con Auréa</div><div class="n">🎓 Area professionisti</div></div></div>
   <div class="alert info"><span>🔐</span><div>Registrati come professionista per ricevere prenotazioni, follower e recensioni. I titoli vengono <b>verificati</b>: si può lavorare sulla piattaforma solo con credenziali valide e riconosciute in Italia.</div></div>
+  <div class="alert info" style="background:#e8f1ff"><span>📦</span><div>Per <b>vendere integratori</b> nel negozio, scegli la professione <b>“Fornitore autorizzato”</b> e carica il documento aziendale (visura / P.IVA / autorizzazione).</div></div>
   <div class="card">
     <div class="field"><label>Professione</label><select id="pro-prof" onchange="proEnteUpdate()">${PROFS.map(p=>`<option>${p.v}</option>`).join('')}</select></div>
-    <div class="field"><label>Nome e cognome professionale</label><input id="pro-name" value="${(S.user.name||'').replace(/"/g,'&quot;')}"></div>
-    <div class="field"><label>Titolo di studio</label><input id="pro-title" placeholder="es. Laurea Magistrale in Biologia della Nutrizione"></div>
+    <div class="field"><label>Nome e cognome / Ragione sociale</label><input id="pro-name" value="${(S.user.name||'').replace(/"/g,'&quot;')}"></div>
+    <div class="field"><label id="pro-title-lbl">Titolo di studio</label><input id="pro-title" placeholder="es. Laurea Magistrale in Biologia della Nutrizione"></div>
     <div class="field"><label>Regione in cui ti sei laureato</label><select id="pro-reg" onchange="proUniUpdate()"><option value="">— seleziona —</option>${REGIONS.map(r=>`<option>${r}</option>`).join('')}</select></div>
     <div class="grid2"><div class="field"><label>Università</label><select id="pro-uni"><option>Scegli prima la regione</option></select></div><div class="field"><label>Anno di laurea</label><input id="pro-year" type="number" inputmode="numeric" placeholder="es. 2016"></div></div>
     <div class="field"><label>Ente / Albo di riferimento</label><input id="pro-ente" readonly value="${first.ente}"></div>
@@ -4423,7 +4426,12 @@ function proHTML(){
   </div>`;
 }
 let _proCert=null;
-function proEnteUpdate(){const v=document.getElementById('pro-prof').value;const p=profByName(v);document.getElementById('pro-ente').value=p.ente;const al=document.getElementById('pro-albo');const lbl=document.getElementById('pro-albo-lbl');if(p.albo){al.disabled=false;al.placeholder='es. 123456';lbl.textContent='N. iscrizione albo (obbligatorio)';}else{al.disabled=false;al.placeholder='se disponibile';lbl.textContent='N. iscrizione / matricola (facoltativo)';}}
+function proEnteUpdate(){const v=document.getElementById('pro-prof').value;const p=profByName(v);document.getElementById('pro-ente').value=p.ente;const al=document.getElementById('pro-albo');const lbl=document.getElementById('pro-albo-lbl');if(p.albo){al.disabled=false;al.placeholder='es. 123456';lbl.textContent='N. iscrizione albo (obbligatorio)';}else{al.disabled=false;al.placeholder='se disponibile';lbl.textContent='N. iscrizione / matricola (facoltativo)';}
+  // per il Fornitore i campi diventano aziendali
+  const isForn=/fornitore/i.test(v); const tl=document.getElementById('pro-title-lbl'); const ti=document.getElementById('pro-title');
+  if(tl){ tl.textContent=isForn?'Ragione sociale / P.IVA':'Titolo di studio'; }
+  if(ti){ ti.placeholder=isForn?'es. Nutraceutici SRL · P.IVA 01234567890':'es. Laurea Magistrale in Biologia della Nutrizione'; }
+  const albLbl=document.getElementById('pro-albo-lbl'); if(albLbl&&isForn){ albLbl.textContent='N. REA / registro imprese (facoltativo)'; }}
 function uploadCert(){capturePhoto(setCert,'Inquadra il titolo / certificato');}
 function setCert(url,file){_proCert=url;const el=document.getElementById('pro-cert-status');if(!el)return;
   const isPdf=(url||'').startsWith('data:application/pdf')||(file&&/pdf$/i.test(file.name||''));
@@ -4561,7 +4569,7 @@ function adminAddProduct(){ openForm({title:'Aggiungi prodotto',subtitle:'Con fo
     try{ await cloudAddProduct({n:n,d:(v.d||'').trim(),p:pr,ic:'💊',bg:'#e8f1ff',tag:'',by:'Auréa',img:v.img||''}); _prodLoaded=false; toast('Prodotto aggiunto'); renderAdmin(); }catch(e){ toast('Errore: '+(e.message||e)); } } }); }
 const PRO_TIMES=['08:00','09:00','09:30','10:00','10:30','11:00','12:00','14:00','15:00','15:30','16:00','16:30','17:00','18:00','19:00'];
 function toggleProReco(name,btn){ if(!S.pro)return; S.pro.recommends=S.pro.recommends||[]; const i=S.pro.recommends.indexOf(name); if(i<0)S.pro.recommends.push(name); else S.pro.recommends.splice(i,1); if(btn)btn.classList.toggle('sel'); save(); toast(i<0?('Consigli: '+name):('Rimosso: '+name)); }
-function addRecoProduct(){ if(!canSell()){toast('Solo i professionisti verificati possono inserire prodotti');return;}
+function addRecoProduct(){ if(!canSell()){toast('Solo i fornitori autorizzati o admin possono inserire integratori in vendita');return;}
   openForm({title:'Consiglia un prodotto',subtitle:'Aggiungilo al negozio e ai tuoi consigli',
     fields:[{id:'img',label:'Fotografia del prodotto',type:'photo'},{id:'n',label:'Nome prodotto'},{id:'d',label:'Descrizione breve'},{id:'p',label:'Prezzo €',type:'number',value:'19.90'}],
     submit:'Aggiungi e consiglia',
@@ -4649,9 +4657,9 @@ function proStatusHTML(){
 
   <div class="card">
     <div class="h">🛍️ Prodotti che consiglio ai pazienti</div>
-    <div class="sub" style="margin-bottom:10px">Inserisci un prodotto da consigliare oppure selezionalo tra quelli già in vendita: i pazienti lo vedranno sul tuo profilo e potranno aggiungerlo al carrello.</div>
-    ${allProducts().length?`<div class="chips" style="margin-bottom:10px">${allProducts().map(p=>`<button class="chip ${(s.recommends||[]).includes(p.n)?'sel':''}" onclick="toggleProReco('${p.n.replace(/'/g,"\\'")}',this)">${p.ic||'💊'} ${p.n}</button>`).join('')}</div>`:'<div class="sub" style="margin-bottom:10px">Nessun prodotto ancora in catalogo: inseriscine uno qui sotto.</div>'}
-    <button class="btn sec sm" onclick="addRecoProduct()">＋ Inserisci un prodotto da consigliare</button>
+    <div class="sub" style="margin-bottom:10px">Seleziona tra gli integratori già in vendita quelli che vuoi consigliare: i pazienti li vedranno sul tuo profilo e potranno aggiungerli al carrello.</div>
+    ${allProducts().length?`<div class="chips" style="margin-bottom:10px">${allProducts().map(p=>`<button class="chip ${(s.recommends||[]).includes(p.n)?'sel':''}" onclick="toggleProReco('${p.n.replace(/'/g,"\\'")}',this)">${p.ic||'💊'} ${p.n}</button>`).join('')}</div>`:'<div class="sub" style="margin-bottom:10px">Nessun integratore ancora in catalogo. Compariranno qui quando i fornitori autorizzati li inseriranno.</div>'}
+    ${canSell()?`<button class="btn sec sm" onclick="addRecoProduct()">＋ Inserisci un nuovo integratore in vendita</button>`:`<div class="tiny">Solo i fornitori autorizzati possono inserire nuovi integratori in vendita; tu puoi consigliare quelli già presenti in catalogo.</div>`}
   </div>
 
   <div class="card">
