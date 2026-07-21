@@ -655,7 +655,7 @@ function cloudInit(){
 function cloudOn(){ return !!SB; }
 function loggedIn(){ return !!cloudUser; }
 const OWNER_EMAIL="aurea.wellness.app@gmail.com";
-const APP_VERSION="v60";
+const APP_VERSION="v62";
 const POLICY_VERSION="2026-07-01"; // aggiornare a ogni modifica di Termini/Privacy
 function isAdmin(){ return !!(cloudUser && (cloudUser.email||'').toLowerCase()===OWNER_EMAIL); }
 // registro consensi (tracciabilità GDPR)
@@ -2906,7 +2906,7 @@ function proDashHTML(){
 
   <div class="banner gg"><span class="b-ic">${s.ic||'🎓'}</span><h4>${s.profession}</h4><p>${s.status==='verificato'?'Profilo verificato e attivo. Gestisci qui la tua attività.':(s.status==='in_verifica'?'Verifica dei titoli in corso…':'Verifica da completare: ricarica i documenti dalla tua scheda.')}</p></div>
   ${s.status!=='verificato'?`<div class="alert ${s.status==='in_verifica'?'info':'warn'}" onclick="go('pro')" style="cursor:pointer"><span>${s.status==='in_verifica'?'⏳':'📄'}</span><div>${s.status==='in_verifica'?'Sei registrato come professionista. Appena verificato comparirai in "Prenota" e potrai pubblicare.':'Non abbiamo potuto verificare automaticamente: tocca per ricontrollare i dati e ricaricare il certificato.'} Il tuo profilo resta salvato finché non lo ritiri.</div></div>`:''}
-  ${!((s.avail||[]).some(d=>normTimes(d.times).length))?`<div class="alert warn" onclick="go('pro')" style="cursor:pointer;border:2px solid var(--amber)"><span>📅</span><div><b>Imposta le tue disponibilità.</b> Senza giorni e orari i clienti non possono prenotarti. Tocca per aggiungerli — puoi distinguere gli orari in videochiamata da quelli in studio.</div></div>`:''}
+  ${!((s.avail||[]).some(d=>normTimes(d.times).length))?`<div class="alert warn" onclick="go('disponibilita')" style="cursor:pointer;border:2px solid var(--amber)"><span>📅</span><div><b>Imposta le tue disponibilità.</b> Senza giorni e orari i clienti non possono prenotarti. Tocca per aggiungerli — puoi distinguere gli orari in videochiamata da quelli in studio.</div></div>`:''}
 
   <div class="grid2" style="margin-bottom:8px">
     <div class="stat" style="cursor:default"><div class="ico" style="background:#e8f1ff;color:var(--blue)">${ic('calendar',20)}</div><div class="v">${S.appointments.length}</div><div class="l">Appuntamenti</div></div>
@@ -2957,15 +2957,15 @@ async function publishAvail(){
   const n=((S.pro&&S.pro.avail)||[]).reduce((a,d)=>a+normTimes(d.times).length,0);
   if(!n){ toast('Aggiungi almeno un orario prima di pubblicare'); return; }
   save();
-  const st=document.getElementById('avail-status');
+  const setStatus=(cls,ic,msg)=>{ document.querySelectorAll('#avail-status').forEach(st=>{ st.innerHTML='<div class="alert '+cls+'" style="margin-top:12px"><span>'+ic+'</span><div>'+msg+'</div></div>'; }); };
   if(cloudOn()&&cloudUser){
-    if(st)st.innerHTML='<div class="alert info" style="margin-top:12px"><span>⏳</span><div>Pubblicazione in corso…</div></div>';
+    setStatus('info','⏳','Pubblicazione in corso…');
     try{ await cloudSaveProfile(); toast('✅ Disponibilità pubblicate · i clienti possono prenotarti');
-      if(st)st.innerHTML='<div class="alert ok" style="margin-top:12px"><span>✅</span><div><b>Pubblicate!</b> '+n+' '+(n===1?'orario è':'orari sono')+' visibili ai clienti in fase di prenotazione.</div></div>';
-    }catch(e){ toast('Salvate sul dispositivo · '+((e&&e.message)||e)); if(st)st.innerHTML='<div class="alert warn" style="margin-top:12px"><span>⚠️</span><div>Salvate sul dispositivo, ma non ho potuto inviarle al cloud: '+((e&&e.message)||e)+'</div></div>'; }
+      setStatus('ok','✅','<b>Pubblicate!</b> '+n+' '+(n===1?'orario è':'orari sono')+' visibili ai clienti in fase di prenotazione.');
+    }catch(e){ toast('Salvate sul dispositivo · '+((e&&e.message)||e)); setStatus('warn','⚠️','Salvate sul dispositivo, ma non ho potuto inviarle al cloud: '+((e&&e.message)||e)); }
   } else {
     toast('Salvate. Accedi alla modalità reale (cloud) per renderle visibili ai clienti');
-    if(st)st.innerHTML='<div class="alert warn" style="margin-top:12px"><span>⚠️</span><div>Orari salvati sul dispositivo. Per renderli visibili ai clienti devi <b>accedere alla modalità reale</b> (Profilo → Attiva modalità reale).</div></div>';
+    setStatus('warn','⚠️','Orari salvati sul dispositivo. Per renderli visibili ai clienti devi <b>accedere alla modalità reale</b> (Profilo → Attiva modalità reale).');
   }
 }
 function deleteWorkout(id){ confirmBox('Eliminare questo video di allenamento?',async()=>{
@@ -5336,25 +5336,28 @@ function slotMode(s){ return (s&&typeof s==='object')?(s.m||'both'):'both'; }
 function normTimes(times){ return (times||[]).map(s=>(s&&typeof s==='object')?{t:s.t,m:s.m||'both'}:{t:s,m:'both'}); }
 function refreshAvailCount(){ const n=((S.pro&&S.pro.avail)||[]).reduce((a,d)=>a+normTimes(d.times).length,0); document.querySelectorAll('.avail-count').forEach(el=>{ el.textContent=n+' orari'; }); return n; }
 function renderProAvail(){
-  const c=document.getElementById('pro-avail'); if(!c){ refreshAvailCount(); return; }
   refreshAvailCount();
+  const conts=document.querySelectorAll('#pro-avail'); if(!conts.length)return;
   const av=(S.pro&&S.pro.avail)||[];
-  if(!av.length){ c.innerHTML='<div class="alert warn" style="margin:0"><span>📅</span><div>Non hai ancora inserito disponibilità: <b>i clienti non possono prenotarti</b>. Aggiungi almeno un giorno qui sotto.</div></div>'; return; }
-  const group=(d,di,mode)=>{ const raw=(d.times||[]); const idx=[]; raw.forEach((s,ti)=>{ if(slotMode(s)===mode||slotMode(s)==='both')idx.push({t:slotTime(s),ti}); });
-    const used=idx.map(x=>x.t);
-    const sid='pro-t'+(mode==='studio'?'s':'v')+'-'+di;
-    return `<div style="margin-top:8px">
-      <b style="font-size:12.5px">${mode==='studio'?'🏥 In studio':'💻 Videochiamata'}</b>
-      <div class="chips" style="margin-top:4px">${idx.length?idx.map(x=>`<button class="chip sel" onclick="proDelTime(${di},${x.ti})">${x.t} ✕</button>`).join(''):'<span class="sub" style="font-size:12px">nessun orario</span>'}</div>
-      <div style="display:flex;gap:6px;align-items:center;margin-top:6px">
-        <select id="${sid}" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px">${PRO_TIMES.filter(t=>!used.includes(t)).map(t=>`<option>${t}</option>`).join('')}</select>
-        <button class="btn sm sec" style="width:auto;padding:8px 12px" onclick="proAddTime(${di},'${mode}')">＋ Orario</button>
-      </div></div>`; };
-  c.innerHTML=av.map((d,di)=>`<div class="card tight" style="box-shadow:none;border:1px solid var(--line);margin-bottom:10px">
-    <div class="h" style="font-size:14px">📅 ${d.label} <button onclick="proDelDate(${di})" style="float:right;background:none;border:none;color:var(--coral);font-size:15px;cursor:pointer">🗑</button></div>
-    ${group(d,di,'video')}
-    ${group(d,di,'studio')}
-  </div>`).join('');
+  let html;
+  if(!av.length){ html='<div class="alert warn" style="margin:0"><span>📅</span><div>Non hai ancora inserito disponibilità: <b>i clienti non possono prenotarti</b>. Aggiungi almeno un giorno qui sotto.</div></div>'; }
+  else {
+    const group=(d,di,mode)=>{ const raw=(d.times||[]); const idx=[]; raw.forEach((s,ti)=>{ if(slotMode(s)===mode||slotMode(s)==='both')idx.push({t:slotTime(s),ti}); });
+      const used=idx.map(x=>x.t);
+      return `<div class="pro-slotgrp" data-di="${di}" data-mode="${mode}" style="margin-top:8px">
+        <b style="font-size:12.5px">${mode==='studio'?'🏥 In studio':'💻 Videochiamata'}</b>
+        <div class="chips" style="margin-top:4px">${idx.length?idx.map(x=>`<button class="chip sel" onclick="proDelTime(${di},${x.ti})">${x.t} ✕</button>`).join(''):'<span class="sub" style="font-size:12px">nessun orario</span>'}</div>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:6px">
+          <select class="pro-slotsel" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:10px">${PRO_TIMES.filter(t=>!used.includes(t)).map(t=>`<option>${t}</option>`).join('')}</select>
+          <button class="btn sm sec" style="width:auto;padding:8px 12px" onclick="proAddTime(${di},'${mode}',this)">＋ Orario</button>
+        </div></div>`; };
+    html=av.map((d,di)=>`<div class="card tight" style="box-shadow:none;border:1px solid var(--line);margin-bottom:10px">
+      <div class="h" style="font-size:14px">📅 ${d.label} <button onclick="proDelDate(${di})" style="float:right;background:none;border:none;color:var(--coral);font-size:15px;cursor:pointer">🗑</button></div>
+      ${group(d,di,'video')}
+      ${group(d,di,'studio')}
+    </div>`).join('');
+  }
+  conts.forEach(c=>{ c.innerHTML=html; });
 }
 function proAddDate(){
   openForm({title:'Giorno disponibile',subtitle:'Scegli la data in cui ricevi',
@@ -5370,7 +5373,7 @@ function proAddDate(){
   });
 }
 function proDelDate(di){ S.pro.avail.splice(di,1); save(); renderProAvail(); }
-function proAddTime(di,mode){ mode=mode||'both'; const sid='pro-t'+(mode==='studio'?'s':'v')+'-'+di; const sel=document.getElementById(sid); if(!sel||!sel.value)return; const t=sel.value; S.pro.avail[di].times=normTimes(S.pro.avail[di].times); if(!S.pro.avail[di].times.some(s=>s.t===t&&s.m===mode)){S.pro.avail[di].times.push({t,m:mode}); S.pro.avail[di].times.sort((a,b)=>a.t<b.t?-1:1); toast((mode==='studio'?'🏥 In studio':'💻 Videochiamata')+' '+t+' aggiunto');} save(); renderProAvail(); }
+function proAddTime(di,mode,btn){ mode=mode||'both'; let sel=null; if(btn&&btn.parentElement){ sel=btn.parentElement.querySelector('select.pro-slotsel')||btn.parentElement.querySelector('select'); } if(!sel){ const grp=document.querySelector('.pro-slotgrp[data-di="'+di+'"][data-mode="'+mode+'"]'); if(grp)sel=grp.querySelector('select'); } if(!sel||!sel.value){ toast('Scegli un orario dal menu'); return; } const t=sel.value; S.pro.avail[di].times=normTimes(S.pro.avail[di].times); if(!S.pro.avail[di].times.some(s=>s.t===t&&s.m===mode)){S.pro.avail[di].times.push({t,m:mode}); S.pro.avail[di].times.sort((a,b)=>a.t<b.t?-1:1); toast((mode==='studio'?'🏥 In studio':'💻 Videochiamata')+' '+t+' aggiunto');} else { toast('Orario già presente'); } save(); renderProAvail(); }
 function proDelTime(di,ti){ S.pro.avail[di].times.splice(ti,1); save(); renderProAvail(); }
 function proStatusHTML(){
   const s=S.pro; const rev=docReviews(s.name);
