@@ -2544,7 +2544,11 @@ function openRecipe(id){ const r=findRecipe(id); if(!r)return;
     </div>
     ${(r.ing&&r.ing.length)?`<div class="section-title" style="margin-top:0">Ingredienti</div><ul style="margin:0 0 14px;padding-left:18px;font-size:13px;line-height:1.7;color:var(--ink)">${r.ing.map(i=>`<li>${i}</li>`).join('')}</ul>`:''}
     ${r.steps?`<div class="section-title">Preparazione</div><div class="sub" style="margin-bottom:14px;line-height:1.6">${r.steps}</div>`:''}
-    <div class="tiny" style="margin-bottom:12px">Ricetta di <b>${r.by||'Auréa'}</b></div>
+    <div class="row" style="margin-bottom:12px;align-items:center">
+      <div class="ri" style="background:var(--mint);color:var(--green-d)">${ic('user',18)}</div>
+      <div class="rt" style="flex:1"><b>${r.by||'Auréa'}</b><small>autore della ricetta</small></div>
+      ${(r.owner&&cloudUser&&r.owner!==cloudUser.id)?`<button class="btn sm sec" style="width:auto;padding:7px 12px;font-size:12px" onclick="followRecipeAuthor('${r.owner}','${(r.by||'').replace(/'/g,'')}',this)">${isFollowingId(r.owner)?'Segui già':'+ Segui'}</button>`:''}
+    </div>
     <button class="btn" onclick="shareRecipe('${r.id}')">Condividi in Community</button>
     ${canDel?`<button class="btn sec sm" style="margin-top:8px;color:var(--coral)" onclick="delRecipe('${r.id}')">Elimina ricetta</button>`:''}
     <button class="btn sec sm" style="margin-top:8px" onclick="this.closest('.app-modal').remove()">Chiudi</button>`);
@@ -3677,6 +3681,7 @@ function realShortCard(p){
 }
 function toggleSaveReal(pid,btn){ cloudToggleSave(pid).then(s=>{ if(btn)btn.innerHTML=`<span>${s?'🔖':'🏷️'}</span><span class="cnt">${s?'Salvato':'Salva'}</span>`; toast(s?'Salvato nei tuoi preferiti':'Rimosso dai salvati'); }); }
 function toggleFollowReal(uid,btn){ cloudToggleFollow(uid).then(f=>{ if(btn){btn.textContent=f?'Segui già':'+ Segui'; btn.classList.toggle('ing',f);} toast(f?'Ora segui questo profilo':'Non segui più'); }); }
+function followRecipeAuthor(uid,name,btn){ if(!(cloudOn()&&loggedIn())){ toast('Accedi per seguire'); go('cloud'); return; } cloudToggleFollow(uid).then(f=>{ if(btn)btn.textContent=f?'Segui già':'+ Segui'; toast(f?('Ora segui '+(name||'questo profilo')):'Non segui più'); }); }
 function openComments(pid){
   const box=modalSheet(`<div class="grab"></div><h3 style="text-align:center;margin:0 0 10px;font-size:16px">💬 Commenti</h3><div id="cmt-list" style="max-height:48vh;overflow-y:auto;margin-bottom:10px"><div class="sub">Caricamento…</div></div><div class="chatbar" style="position:static"><input id="cmt-in" placeholder="Scrivi un commento…" onkeydown="if(event.key==='Enter')sendComment('${pid}')"><button onclick="sendComment('${pid}')">➤</button></div>`);
   renderComments(pid);
