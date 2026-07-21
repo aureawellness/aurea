@@ -239,6 +239,10 @@ body{
 .seg button{flex:1;border:none;background:transparent;padding:9px;border-radius:11px;font-weight:700;font-size:12.5px;color:var(--muted);cursor:pointer}
 .fbtn{background:none;border:none;display:flex;align-items:center;gap:5px;font-weight:700;color:var(--ink);cursor:pointer;font-size:13px;padding:0}
 .notifdot{position:absolute;top:-3px;right:-3px;background:var(--coral);color:#fff;font-size:10px;font-weight:800;min-width:17px;height:17px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+.msg-tick{font-size:10px;opacity:.65;margin-left:6px;vertical-align:bottom}
+.msg-tick.read{color:#4b9fff;opacity:1}
+.nav-msgdot{position:absolute;top:2px;right:calc(50% - 18px);width:9px;height:9px;background:var(--coral);border-radius:50%;box-shadow:0 0 0 2px #fff}
+.nav button{position:relative}
 /* ===== Diretta live (LiveKit) ===== */
 .live-panel{position:absolute;inset:0;z-index:230;background:#000;display:flex;flex-direction:column;overflow:hidden;border-radius:40px}
 .live-top{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:linear-gradient(rgba(0,0,0,.6),rgba(0,0,0,0));color:#fff;position:absolute;top:0;left:0;right:0;z-index:6}
@@ -1151,6 +1155,7 @@ function renderNav(){
   document.getElementById('nav').innerHTML=list.map(n=>
     `<button data-t="${n.id}" onclick="${n.menu?'openMenu()':`go('${n.id}')`}"><span class="ni">${ic(n.icn,23)}</span>${n.l}</button>`
   ).join('');
+  try{ paintMsgBadges(); }catch(e){}
 }
 function renderCartBadge(){
   const b=document.getElementById('navcart'); if(!b) return;
@@ -1470,6 +1475,7 @@ function homeHTML(){
     <button class="qa" onclick="openMenu()"><span class="qi" style="background:var(--violet-s);color:var(--violet)">${ic('grid',24)}</span>Tutto</button>
   </div>
 
+  <div id="home-msg"></div>
   <div id="home-live"></div>
 
   <div class="section-title">Prossimi appuntamenti <span class="more" onclick="go('prenota')">Vedi tutti</span></div>
@@ -2892,7 +2898,8 @@ function chatMsgHtml(m,isGroup){ const me=m.from_id===cloudUser.id; let inner=''
     inner+=isImg?`<img src="${m.attachment}" style="max-width:180px;border-radius:12px;display:block;cursor:pointer;margin-bottom:${m.text?'6px':'0'}" onclick="window.open('${m.attachment}','_blank')">`:`<a href="${m.attachment}" target="_blank" style="color:inherit;text-decoration:underline">📎 Allegato</a>${m.text?'<br>':''}`; }
   if(m.text) inner+=(m.text||'').replace(/</g,'&lt;');
   const sender=(isGroup&&!me)?`<div style="font-size:10px;font-weight:700;opacity:.65;margin-bottom:2px">${(m.from_name||'Utente').replace(/</g,'&lt;')}</div>`:'';
-  return `<div class="msg ${me?'me':'ai'}">${sender}${inner}</div>`; }
+  const tick=(me&&!isGroup)?`<span class="msg-tick${m.read?' read':''}" title="${m.read?'Visualizzato':'Inviato'}">${m.read?'✓✓':'✓'}</span>`:'';
+  return `<div class="msg ${me?'me':'ai'}">${sender}${inner}${tick}</div>`; }
 function renderChat(){
   if(!(cloudOn()&&loggedIn()))return;
   Promise.all([cloudLoadMessages(),cloudLoadGroups()]).then(()=>{
@@ -2900,6 +2907,7 @@ function renderChat(){
       const msgs=w.group?CHAT_MSGS.filter(m=>m.group_id===w.id):CHAT_MSGS.filter(m=>(m.from_id===cloudUser.id&&m.to_id===w.id)||(m.from_id===w.id&&m.to_id===cloudUser.id));
       box.innerHTML=msgs.length?msgs.map(m=>chatMsgHtml(m,w.group)).join(''):'<div class="sub" style="text-align:center;padding:20px">Nessun messaggio. Scrivi per iniziare.</div>';
       box.scrollTop=box.scrollHeight;
+      if(!w.group) cloudMarkThreadRead(w.id);
     } else { const c=document.getElementById('chat-threads'); if(!c)return; const grps=groupThreads(); const th=chatThreads(); let html='';
       if(grps.length) html+=`<div class="section-title" style="margin-top:0">Gruppi</div>`+grps.map(t=>`<div class="row" onclick="openChatWith(${t.id},'${(t.name||'').replace(/'/g,"\\'")}',true)" style="cursor:pointer"><div class="ri" style="background:var(--violet-s);color:var(--violet)">${ic('users',22)}</div><div class="rt" style="flex:1"><b>${t.name}</b><small>${(t.last||'').slice(0,44)}</small></div><div class="rv">›</div></div>`).join('');
       if(th.length) html+=`${grps.length?'<div class="section-title">Conversazioni</div>':''}`+th.map(t=>`<div class="row" onclick="openChatWith('${t.id}','${(t.name||'').replace(/'/g,"\\'")}')" style="cursor:pointer"><div class="ri" style="background:var(--mint);color:var(--green-d)">${ic('user',22)}</div><div class="rt" style="flex:1"><b>${t.name||'Cliente'}</b><small>${(t.last||'').slice(0,44)}</small></div><div class="rv">›</div></div>`).join('');
@@ -2909,6 +2917,18 @@ function renderChat(){
 }
 async function sendClientMsg(){ const el=document.getElementById('chat-msg'); const t=(el&&el.value||'').trim(); if(!t||!S._chatWith)return; el.value='';
   try{ await cloudSendMessage(chatSendPayload({text:t})); renderChat(); }catch(e){ toast('Invio non riuscito: '+(e.message||e)); } }
+/* ===== Messaggi non letti (pallino) + visualizzato (spunta) ===== */
+let MSG_UNREAD=0, _chatPoll=null;
+async function cloudLoadMsgUnread(){ if(!cloudOn()||!cloudUser){MSG_UNREAD=0;return 0;} try{ const {count,error}=await SB.from('messages').select('id',{count:'exact',head:true}).eq('to_id',cloudUser.id).eq('read',false).is('group_id',null); if(error)throw error; MSG_UNREAD=count||0; }catch(e){} return MSG_UNREAD; }
+async function cloudMarkThreadRead(otherId){ if(!cloudOn()||!cloudUser||!otherId)return; try{ await SB.from('messages').update({read:true}).eq('to_id',cloudUser.id).eq('from_id',otherId).eq('read',false); }catch(e){} refreshMsgBadges(); }
+function paintMsgBadges(){ document.querySelectorAll('.msg-badge').forEach(b=>{ b.style.display=MSG_UNREAD?'flex':'none'; b.textContent=MSG_UNREAD>9?'9+':MSG_UNREAD; });
+  const nb=document.querySelector('#nav button[data-t="community"]'); if(nb){ let d=nb.querySelector('.nav-msgdot'); if(MSG_UNREAD){ if(!d){ d=document.createElement('span'); d.className='nav-msgdot'; nb.appendChild(d); } } else if(d){ d.remove(); } } }
+function refreshMsgBadges(){ if(!(cloudOn()&&loggedIn())){ MSG_UNREAD=0; paintMsgBadges(); return; } cloudLoadMsgUnread().then(()=>{ paintMsgBadges(); const h=document.getElementById('home-msg'); if(h&&curScreen==='home')renderHomeMsg(); }); }
+function renderHomeMsg(){ const c=document.getElementById('home-msg'); if(!c)return; if(!MSG_UNREAD){ c.innerHTML=''; return; }
+  c.innerHTML=`<div class="card" onclick="go('clientchat')" style="cursor:pointer;margin-top:14px;background:linear-gradient(120deg,var(--mint),#fff)"><div class="row"><div class="ri" style="background:#fff;color:var(--green-d);position:relative">✉️<span class="notifdot" style="display:flex">${MSG_UNREAD>9?'9+':MSG_UNREAD}</span></div><div class="rt" style="flex:1"><b>${MSG_UNREAD===1?'Hai 1 nuovo messaggio':'Hai '+MSG_UNREAD+' nuovi messaggi'}</b><small>Tocca per aprire la chat</small></div><div class="rv">›</div></div></div>`;
+}
+function startChatPoll(){ stopChatPoll(); if(!(cloudOn()&&loggedIn()))return; _chatPoll=setInterval(()=>{ if(curScreen==='clientchat'){ renderChat(); } else { stopChatPoll(); } },4000); }
+function stopChatPoll(){ if(_chatPoll){ clearInterval(_chatPoll); _chatPoll=null; } }
 function attachChat(){ if(!S._chatWith)return; fileFallback(async(dataUrl,file)=>{ if(!file)return; toast('Invio allegato…'); try{ const url=await uploadBlob(file,file.name||'allegato'); await cloudSendMessage(chatSendPayload({attachment:url,attachType:file.type||'file'})); renderChat(); }catch(e){ toast('Allegato non inviato: '+(e.message||e)); } },'*/*'); }
 function createGroup(){ if(!(cloudOn()&&loggedIn())){toast('Accedi per creare un gruppo');go('cloud');return;}
   openForm({title:'Nuovo gruppo',subtitle:'Aggiungi i membri con la loro email Auréa',
@@ -4005,7 +4025,7 @@ function communityHTML(){
   <div class="topbar"><div class="hello"><div class="k">Community Auréa</div><div class="n">👥 Feed</div></div>
     <div style="display:flex;gap:8px;align-items:center">
       <button class="avatar" style="border:none;position:relative;font-size:18px" onclick="go('notifiche')">🔔<span class="notif-badge notifdot" style="display:none"></span></button>
-      <button class="avatar" style="border:none;font-size:18px" onclick="go('clientchat')">✉️</button>
+      <button class="avatar" style="border:none;position:relative;font-size:18px" onclick="go('clientchat')">✉️<span class="msg-badge notifdot" style="display:none"></span></button>
     </div></div>
   <button class="btn" style="margin-bottom:10px" onclick="composeUserPost()">✏️ Pubblica un post</button>
   <button class="btn sec sm" style="margin-bottom:12px" onclick="go('ricerca')">🔍 Cerca utenti, hashtag, ricette…</button>
@@ -5309,7 +5329,8 @@ const BUILDERS={
 };
 function rebuild(id){const el=document.getElementById('sc-'+id);if(el&&BUILDERS[id])el.innerHTML=BUILDERS[id]();afterRender(id);}
 function afterRender(id){
-  if(id==='home'){renderHomeAppts(); renderHomeLive();}
+  if(id==='home'){renderHomeAppts(); renderHomeLive(); refreshMsgBadges();}
+  if(id==='clientchat'){startChatPoll();}
   if(id==='dirette'){renderDirette();}
   if(id==='piano'){renderDislike();}
   if(id==='prenota'){
@@ -5323,7 +5344,7 @@ function afterRender(id){
   }
   if(id==='promemoria'){renderReminders();}
   if(id==='planning'){renderPlanBody('cal');}
-  if(id==='community'){renderComBody('perte'); updateNotifBadge();}
+  if(id==='community'){renderComBody('perte'); updateNotifBadge(); refreshMsgBadges();}
   if(id==='notifiche'){renderNotifs();}
   if(id==='storia'){renderIntol();}
   if(id==='digiuno'){fastStatus();updateFastEnd();}
@@ -5355,7 +5376,8 @@ function boot(){
   const aw=document.getElementById('authwall');
   if(aw){ ['focusin','input'].forEach(ev=>aw.addEventListener(ev,()=>{ _authBusy=true; })); }
   if(cloudOn()){
-    cloudCheckSession().then(u=>{ if(u && !_authBusy){ hideAuthWall(); if(!S.setup){showOnboard();} else {rebuildAll();go('home');} } preloadCloud(); });
+    cloudCheckSession().then(u=>{ if(u && !_authBusy){ hideAuthWall(); if(!S.setup){showOnboard();} else {rebuildAll();go('home');} } preloadCloud(); try{refreshMsgBadges();}catch(e){} });
+    setInterval(()=>{ try{ if(curScreen!=='clientchat')refreshMsgBadges(); }catch(e){} },20000);
   }
   // clock
   function tick(){const el=document.getElementById('clock');if(el)el.textContent=new Date().getHours()+':'+String(new Date().getMinutes()).padStart(2,'0');
